@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --navy-night: #0B192C;
+    --navy-deep: #1E3A5F;
+    --accent-orange: #F97316;
+    --accent-emerald: #10B981;
+  }
+
+  body {
+    background-color: #F8FAFC;
+    color: #0F172A;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
