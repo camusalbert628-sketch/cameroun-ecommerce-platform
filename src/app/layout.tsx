@@ -11,9 +11,9 @@ const plusJakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "[NOM DE L'ENTREPRISE] — Plateforme E-Commerce & Marketplace Cameroun",
+  title: "Albedo'o — La valeur en mouvement. | E-Commerce & Marketplace Cameroun",
   description:
-    "Plateforme de commerce électronique hybride au Cameroun : Vente directe, Vendeurs partenaires vérifiés, Paiements Orange Money & MTN MoMo, Livraison Douala, Yaoundé et National.",
+    "Albedo'o — Plateforme de commerce électronique hybride au Cameroun : Vente directe, Vendeurs partenaires vérifiés, Paiements Orange Money & MTN MoMo, Livraison Douala, Yaoundé et National.",
 };
 
 export default function RootLayout({

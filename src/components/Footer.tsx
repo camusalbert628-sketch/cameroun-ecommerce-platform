@@ -8,14 +8,15 @@ export function Footer() {
       <div className="mx-auto max-w-[1680px] px-4 py-12">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
           <div>
-            <div className="flex items-center gap-2.5 mb-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#1E3A5F] text-white font-bold border border-orange-500/40">
-                CM
-              </div>
-              <span className="font-extrabold text-white">[NOM DE L&apos;ENTREPRISE]</span>
+            <div className="mb-3 inline-block rounded-xl bg-white px-3 py-1.5 shadow-sm">
+              <img
+                src="/logo-albedoo.png"
+                alt="Albedo'o — La valeur en mouvement."
+                className="h-9 w-auto object-contain"
+              />
             </div>
             <p className="text-xs leading-relaxed text-slate-400">
-              Plateforme hybride de commerce électronique au Cameroun (Vente directe, Vendeurs partenaires vérifiés et Sur commande). Qualité contrôlée, prix transparents en FCFA et livraison suivie.
+              Albedo&apos;o — La valeur en mouvement. Plateforme hybride de commerce électronique au Cameroun (Vente directe, Vendeurs partenaires vérifiés et Sur commande). Qualité contrôlée, prix transparents en FCFA et livraison suivie.
             </p>
             <div className="mt-4 flex flex-wrap gap-2 text-[11px]">
               <span className="rounded bg-white/10 px-2 py-1 text-orange-300 font-semibold">Orange Money</span>
@@ -68,7 +69,7 @@ export function Footer() {
         </div>
 
         <div className="mt-10 border-t border-white/10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
-          <p>© 2026 [NOM DE L&apos;ENTREPRISE] — Droit OHADA & Réglementation Camerounaise du Commerce Électronique.</p>
+          <p>© 2026 Albedo&apos;o — La valeur en mouvement. Droit OHADA &amp; Réglementation Camerounaise du Commerce Électronique.</p>
           <p>Devise officielle : FCFA (XAF) · Version 1.0</p>
         </div>
       </div>

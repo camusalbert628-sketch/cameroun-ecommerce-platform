@@ -197,15 +197,13 @@ export function Navbar() {
         <div className="bg-[#0B192C] text-white">
           <div className="mx-auto flex max-w-[1680px] items-center gap-3 sm:gap-4 px-4 py-2.5">
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2 shrink-0 rounded-lg p-1 hover:ring-1 hover:ring-white/30 transition">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 text-white font-extrabold text-sm shadow">
-                CM
-              </div>
-              <div className="leading-tight hidden sm:block">
-                <div className="text-sm font-extrabold tracking-tight text-white">
-                  [NOM DE L&apos;ENTREPRISE]
-                </div>
-                <div className="text-[10px] text-orange-300 font-semibold">.cm · Marketplace Hybride</div>
+            <Link href="/" className="flex items-center gap-2 shrink-0 rounded-lg p-0.5 hover:ring-1 hover:ring-white/30 transition">
+              <div className="rounded-lg bg-white px-2.5 py-1 shadow-sm">
+                <img
+                  src="/logo-albedoo.png"
+                  alt="Albedo'o — La valeur en mouvement."
+                  className="h-8 sm:h-9 w-auto object-contain"
+                />
               </div>
             </Link>
 
@@ -272,7 +270,7 @@ export function Navbar() {
                   value={search}
                   onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Rechercher sur [NOM DE L'ENTREPRISE] : smartphone, café, onduleur, mode..."
+                  placeholder="Rechercher sur Albedo'o : smartphone, café, onduleur, mode..."
                   className="flex-1 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none"
                 />
                 <button
