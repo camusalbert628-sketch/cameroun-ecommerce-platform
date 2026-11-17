@@ -198,11 +198,11 @@ export function Navbar() {
           <div className="mx-auto flex max-w-[1680px] items-center gap-3 sm:gap-4 px-4 py-2.5">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2 shrink-0 rounded-lg p-0.5 hover:ring-1 hover:ring-white/30 transition">
-              <div className="rounded-lg bg-white px-2.5 py-1 shadow-sm">
+              <div className="rounded-xl bg-white px-3 py-1.5 shadow-md">
                 <img
                   src="/logo-albedoo.png"
                   alt="Albedo'o — La valeur en mouvement."
-                  className="h-8 sm:h-9 w-auto object-contain"
+                  className="h-10 sm:h-12 md:h-13 w-auto object-contain"
                 />
               </div>
             </Link>
