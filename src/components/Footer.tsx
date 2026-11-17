@@ -8,7 +8,7 @@ export function Footer() {
       <div className="mx-auto max-w-[1680px] px-4 py-12">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
           <div>
-            <div className="mb-3 inline-block rounded-xl bg-white px-4 py-2 shadow-md">
+            <div className="mb-3 inline-block">
               <img
                 src="/logo-albedoo.png"
                 alt="Albedo'o — La valeur en mouvement."
