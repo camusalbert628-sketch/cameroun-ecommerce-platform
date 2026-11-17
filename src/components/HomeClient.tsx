@@ -76,7 +76,7 @@ export function HomeClient({
 }: {
   products: ProductCardData[];
 }) {
-  const { user, deliveryCity, compareIds, toggleCompare, addToCart } = useApp();
+  const { user, deliveryCity, compareIds, toggleCompare, addToCart, recentlyViewedIds } = useApp();
   const [slideIdx, setSlideIdx] = useState(0);
   const [activeTab, setActiveTab] = useState("all");
   const [secondsLeft, setSecondsLeft] = useState(4 * 3600 + 22 * 60 + 15);
@@ -122,6 +122,9 @@ export function HomeClient({
         });
 
   const comparedProducts = products.filter((p) => compareIds.includes(p.id));
+  const recentlyViewedProducts = recentlyViewedIds
+    .map((id) => products.find((p) => p.id === id))
+    .filter((p): p is ProductCardData => Boolean(p));
 
   return (
     <div className="bg-slate-100 pb-12">
@@ -318,7 +321,7 @@ export function HomeClient({
             </div>
           </div>
 
-          <div className="flex gap-4 overflow-x-auto pb-2 snap-x">
+          <div className="flex gap-4 overflow-x-auto pb-2 snap-x no-scrollbar">
             {flashDeals.map((p, idx) => {
               const pct = p.compareAtFcfa
                 ? Math.round(((p.compareAtFcfa - p.priceFcfa) / p.compareAtFcfa) * 100)
@@ -419,6 +422,35 @@ export function HomeClient({
           ))}
         </div>
       </section>
+
+      {/* 4b. Recently Viewed Strip (Amazon-style personalization) */}
+      {recentlyViewedProducts.length > 0 && (
+        <section className="mx-auto max-w-[1680px] px-4 mt-10">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-extrabold text-[#0B192C]">
+                Vos articles récemment consultés
+              </h2>
+              <Link href="/catalogue" className="text-xs font-bold text-[#1E3A5F] hover:text-orange-600">
+                Voir tout le catalogue →
+              </Link>
+            </div>
+            <div className="flex gap-4 overflow-x-auto pb-1 no-scrollbar">
+              {recentlyViewedProducts.map((p) => (
+                <Link
+                  key={p.id}
+                  href={`/produit/${p.slug}`}
+                  className="min-w-[180px] max-w-[190px] rounded-xl border border-slate-200 bg-slate-50/70 p-2.5 hover:border-orange-400 transition shrink-0"
+                >
+                  <img src={p.imageUrl} alt={p.title} className="h-28 w-full object-cover rounded-lg bg-white mb-2" />
+                  <div className="text-xs font-bold text-slate-900 line-clamp-2">{p.title}</div>
+                  <div className="mt-1 text-xs font-extrabold text-[#0B192C] tabular-nums">{formatFcfa(p.priceFcfa)}</div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* 5. 5 Interfaces Banner */}
       <section className="mx-auto max-w-[1680px] px-4 mt-10">

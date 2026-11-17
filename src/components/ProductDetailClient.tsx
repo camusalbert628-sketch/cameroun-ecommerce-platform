@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -62,7 +62,12 @@ interface ProductDetailProps {
 }
 
 export function ProductDetailClient({ product, relatedProducts }: ProductDetailProps) {
-  const { addToCart, deliveryCity, setDeliveryCity, wishlist, toggleWishlist, user, showToast } = useApp();
+  const { addToCart, deliveryCity, setDeliveryCity, wishlist, toggleWishlist, user, showToast, addRecentlyViewed } = useApp();
+
+  useEffect(() => {
+    addRecentlyViewed(product.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product.id]);
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(
     product.variants && product.variants.length > 0 ? product.variants[0].id : null
   );

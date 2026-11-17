@@ -54,6 +54,8 @@ interface AppContextType {
   toggleWishlist: (productId: string, title?: string) => void;
   compareIds: string[];
   toggleCompare: (productId: string) => void;
+  recentlyViewedIds: string[];
+  addRecentlyViewed: (productId: string) => void;
   user: SessionUser | null;
   demoUsers: SessionUser[];
   refreshAuth: () => Promise<void>;
@@ -71,6 +73,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const [deliveryCity, setDeliveryCityState] = useState<CameroonCity>("Douala");
   const [wishlist, setWishlist] = useState<string[]>([]);
   const [compareIds, setCompareIds] = useState<string[]>([]);
+  const [recentlyViewedIds, setRecentlyViewedIds] = useState<string[]>([]);
   const [user, setUser] = useState<SessionUser | null>(null);
   const [demoUsers, setDemoUsers] = useState<SessionUser[]>([]);
   const [toast, setToast] = useState<string | null>(null);
@@ -88,6 +91,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
       if (savedCity) setDeliveryCityState(savedCity);
       const savedWish = localStorage.getItem("cm_ecom_wishlist");
       if (savedWish) setWishlist(JSON.parse(savedWish));
+      const savedRecent = localStorage.getItem("cm_ecom_recent");
+      if (savedRecent) setRecentlyViewedIds(JSON.parse(savedRecent));
     } catch {
       // ignore
     }
@@ -134,6 +139,18 @@ export function Providers({ children }: { children: React.ReactNode }) {
         return prev;
       }
       return [...prev, productId];
+    });
+  };
+
+  const addRecentlyViewed = (productId: string) => {
+    setRecentlyViewedIds((prev) => {
+      const next = [productId, ...prev.filter((id) => id !== productId)].slice(0, 8);
+      try {
+        localStorage.setItem("cm_ecom_recent", JSON.stringify(next));
+      } catch {
+        // ignore
+      }
+      return next;
     });
   };
 
@@ -259,6 +276,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
         toggleWishlist,
         compareIds,
         toggleCompare,
+        recentlyViewedIds,
+        addRecentlyViewed,
         user,
         demoUsers,
         refreshAuth,

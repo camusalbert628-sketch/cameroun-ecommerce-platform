@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import Link from "next/link";
 import { ShieldCheck, Truck, CreditCard, PhoneCall } from "lucide-react";
@@ -5,6 +7,16 @@ import { ShieldCheck, Truck, CreditCard, PhoneCall } from "lucide-react";
 export function Footer() {
   return (
     <footer className="mt-16 border-t border-slate-200 bg-[#0B192C] text-slate-300">
+      <a
+        href="#top"
+        onClick={(e) => {
+          e.preventDefault();
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }}
+        className="block w-full bg-[#1E3A5F] hover:bg-[#274a78] py-3 text-center text-xs font-bold text-white transition cursor-pointer"
+      >
+        ↑ Retour en haut de page
+      </a>
       <div className="mx-auto max-w-[1680px] px-4 py-12">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
           <div>

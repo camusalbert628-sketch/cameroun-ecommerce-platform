@@ -8,6 +8,10 @@
     --accent-emerald: #10B981;
   }
 
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     background-color: #F8FAFC;
     color: #0F172A;
@@ -19,3 +23,11 @@
   font-variant-numeric: tabular-nums;
 }
 
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

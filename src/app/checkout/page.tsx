@@ -359,6 +359,20 @@ export default function CheckoutPage() {
                 );
               })}
             </div>
+
+            {(paymentMethod === "ORANGE_MONEY" || paymentMethod === "MTN_MOMO") && (
+              <div className="mt-3 rounded-xl border border-orange-200 bg-orange-50/70 p-3.5 text-xs text-slate-800 space-y-1">
+                <div className="font-extrabold text-[#0B192C]">
+                  {paymentMethod === "ORANGE_MONEY"
+                    ? "Instruction Orange Money (#150*50#)"
+                    : "Instruction MTN Mobile Money (*126#)"}
+                </div>
+                <p className="text-slate-600">
+                  Une invite de confirmation sécurisée de <strong>{formatFcfa(finalTotal)}</strong> sera envoyée sur le numéro{" "}
+                  <strong>{customerPhone || "+237 6..."}</strong> dès validation.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
