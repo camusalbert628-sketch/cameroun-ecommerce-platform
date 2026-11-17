@@ -350,7 +350,7 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailP
               </span>
               <span className="text-slate-300">|</span>
               <span className="text-emerald-700 font-semibold">
-                {product.vendor ? `Boutique : ${product.vendor.companyName}` : "Vendu par [NOM DE L'ENTREPRISE]"}
+                {product.vendor ? `Boutique : ${product.vendor.companyName}` : "Vendu par Albedo'o"}
               </span>
             </div>
           </div>
@@ -584,7 +584,7 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailP
             {/* Left Dark Translucent Caption Box over Hero Image */}
             <div className="min-w-[270px] sm:min-w-[300px] snap-start self-end rounded-xl bg-black/70 p-4 text-white backdrop-blur-sm border border-white/10">
               <div className="text-sm font-extrabold text-white">
-                {product.vendor ? product.vendor.companyName : "[NOM DE L'ENTREPRISE]"}
+                {product.vendor ? product.vendor.companyName : "Albedo'o"}
               </div>
               <p className="mt-1.5 text-xs text-slate-200 leading-relaxed">
                 Innovant : Sélection certifiée, contrôle qualité physique au Hub Akwa et traçabilité complète jusqu&apos;à votre porte au Cameroun.
@@ -595,7 +595,7 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailP
             <div className="min-w-[290px] sm:min-w-[320px] min-h-[340px] snap-start rounded-xl bg-white p-6 shadow-2xl flex flex-col justify-between">
               <div>
                 <div className="text-2xl font-black text-orange-500 tracking-tight mb-4">
-                  {product.vendor ? product.vendor.companyName.split(" ")[0] : "[MARQUE]"}
+                  {product.vendor ? product.vendor.companyName.split(" ")[0] : "Albedo'o"}
                 </div>
                 <div className="text-xs font-extrabold text-[#0B192C] mb-2">À propos de nous</div>
                 <p className="text-xs text-slate-700 leading-relaxed">

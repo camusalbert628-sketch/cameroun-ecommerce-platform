@@ -118,7 +118,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
         ) : (
           <div className="mb-2 inline-flex items-center gap-1 text-[11px] text-[#1E3A5F] font-semibold">
             <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
-            <span>Expédié par [NOM DE L&apos;ENTREPRISE]</span>
+            <span>Expédié par Albedo&apos;o</span>
           </div>
         )}
 

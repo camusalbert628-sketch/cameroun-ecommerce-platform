@@ -318,7 +318,7 @@ function SuiviContent() {
           <div className="w-full max-w-2xl rounded-2xl bg-white p-8 shadow-2xl space-y-6">
             <div className="flex items-start justify-between border-b border-slate-200 pb-4">
               <div>
-                <div className="text-lg font-extrabold text-[#0B192C]">[NOM DE L&apos;ENTREPRISE]</div>
+                <div className="text-lg font-extrabold text-[#0B192C]">Albedo&apos;o</div>
                 <div className="text-xs text-slate-500">Douala, Cameroun · Conforme DGI / OHADA</div>
               </div>
               <div className="flex items-center gap-2">
