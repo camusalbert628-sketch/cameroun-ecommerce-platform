@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { ShoppingCart, Star, ShieldCheck, Truck, Heart, GitCompare, Eye, X, ArrowRight } from "lucide-react";
 import { formatFcfa, SALES_MODEL_LABELS } from "@/lib/format";
@@ -46,7 +47,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
       : `Livré en ${product.leadTimeDaysOther || 4}j à ${deliveryCity}`;
 
   return (
-    <div className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:border-[#1E3A5F]/40">
+    <div className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow duration-200 hover:shadow-xl hover:border-[#1E3A5F]/40">
       <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
         <Link href={`/produit/${product.slug}`} className="block h-full w-full">
           <img
@@ -176,75 +177,78 @@ export function ProductCard({ product }: { product: ProductCardData }) {
         </div>
       </div>
 
-      {/* Quick View Modal */}
-      {quickViewOpen && (
-        <div
-          onClick={() => setQuickViewOpen(false)}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
-        >
+      {/* Quick View Modal rendered via Portal on document.body to avoid transform/hover oscillation */}
+      {quickViewOpen &&
+        typeof document !== "undefined" &&
+        createPortal(
           <div
-            onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl grid grid-cols-1 sm:grid-cols-2 gap-6"
+            onClick={() => setQuickViewOpen(false)}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
           >
-            <button
-              onClick={() => setQuickViewOpen(false)}
-              className="absolute right-3 top-3 rounded-full bg-slate-100 p-1.5 text-slate-600 hover:bg-slate-200 cursor-pointer"
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl grid grid-cols-1 sm:grid-cols-2 gap-6"
             >
-              <X className="h-4 w-4" />
-            </button>
-            <div className="overflow-hidden rounded-xl bg-slate-100 aspect-square">
-              <img src={product.imageUrl} alt={product.title} className="h-full w-full object-cover" />
-            </div>
-            <div className="flex flex-col justify-between space-y-3">
-              <div>
-                <span className={`inline-block rounded px-2 py-0.5 text-[10px] font-bold mb-1.5 ${modelMeta.badgeClass}`}>
-                  {modelMeta.shortLabel}
-                </span>
-                <h3 className="text-base font-extrabold text-[#0B192C] leading-snug">{product.title}</h3>
-                <div className="mt-1.5 flex items-center gap-1 text-xs font-bold text-amber-500">
-                  <Star className="h-3.5 w-3.5 fill-amber-400" /> {product.rating.toFixed(1)} ({product.reviewCount} avis)
-                </div>
-                <div className="mt-3 text-2xl font-black text-[#0B192C] tabular-nums">
-                  {formatFcfa(product.priceFcfa)}
-                </div>
-                <div className="mt-1 text-xs font-semibold text-emerald-700">{etaText}</div>
-                <div className="mt-0.5 text-xs text-slate-500">
-                  Stock : <strong>{product.stock}</strong> unité(s) · Garantie {product.warrantyMonths} mois
-                </div>
+              <button
+                onClick={() => setQuickViewOpen(false)}
+                className="absolute right-3 top-3 rounded-full bg-slate-100 p-1.5 text-slate-600 hover:bg-slate-200 cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <div className="overflow-hidden rounded-xl bg-slate-100 aspect-square">
+                <img src={product.imageUrl} alt={product.title} className="h-full w-full object-cover" />
               </div>
+              <div className="flex flex-col justify-between space-y-3">
+                <div>
+                  <span className={`inline-block rounded px-2 py-0.5 text-[10px] font-bold mb-1.5 ${modelMeta.badgeClass}`}>
+                    {modelMeta.shortLabel}
+                  </span>
+                  <h3 className="text-base font-extrabold text-[#0B192C] leading-snug">{product.title}</h3>
+                  <div className="mt-1.5 flex items-center gap-1 text-xs font-bold text-amber-500">
+                    <Star className="h-3.5 w-3.5 fill-amber-400" /> {product.rating.toFixed(1)} ({product.reviewCount} avis)
+                  </div>
+                  <div className="mt-3 text-2xl font-black text-[#0B192C] tabular-nums">
+                    {formatFcfa(product.priceFcfa)}
+                  </div>
+                  <div className="mt-1 text-xs font-semibold text-emerald-700">{etaText}</div>
+                  <div className="mt-0.5 text-xs text-slate-500">
+                    Stock : <strong>{product.stock}</strong> unité(s) · Garantie {product.warrantyMonths} mois
+                  </div>
+                </div>
 
-              <div className="space-y-2 pt-2">
-                <button
-                  disabled={product.stock <= 0}
-                  onClick={() => {
-                    setQuickViewOpen(false);
-                    addToCart({
-                      productId: product.id,
-                      slug: product.slug,
-                      title: product.title,
-                      priceFcfa: product.priceFcfa,
-                      imageUrl: product.imageUrl,
-                      salesModel: product.salesModel,
-                      vendorName: product.vendor?.companyName,
-                      maxStock: product.stock,
-                    });
-                  }}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 py-2.5 text-xs font-extrabold text-white hover:bg-orange-600 cursor-pointer"
-                >
-                  <ShoppingCart className="h-4 w-4" /> Ajouter au panier
-                </button>
-                <Link
-                  href={`/produit/${product.slug}`}
-                  onClick={() => setQuickViewOpen(false)}
-                  className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-slate-200 py-2.5 text-xs font-bold text-[#0B192C] hover:bg-slate-50"
-                >
-                  Voir la fiche &amp; variantes <ArrowRight className="h-3.5 w-3.5" />
-                </Link>
+                <div className="space-y-2 pt-2">
+                  <button
+                    disabled={product.stock <= 0}
+                    onClick={() => {
+                      setQuickViewOpen(false);
+                      addToCart({
+                        productId: product.id,
+                        slug: product.slug,
+                        title: product.title,
+                        priceFcfa: product.priceFcfa,
+                        imageUrl: product.imageUrl,
+                        salesModel: product.salesModel,
+                        vendorName: product.vendor?.companyName,
+                        maxStock: product.stock,
+                      });
+                    }}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 py-2.5 text-xs font-extrabold text-white hover:bg-orange-600 cursor-pointer"
+                  >
+                    <ShoppingCart className="h-4 w-4" /> Ajouter au panier
+                  </button>
+                  <Link
+                    href={`/produit/${product.slug}`}
+                    onClick={() => setQuickViewOpen(false)}
+                    className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-slate-200 py-2.5 text-xs font-bold text-[#0B192C] hover:bg-slate-50"
+                  >
+                    Voir la fiche &amp; variantes <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }
