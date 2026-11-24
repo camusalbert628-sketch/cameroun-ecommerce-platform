@@ -1,4 +1,5 @@
 import React from "react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ShieldCheck, ArrowLeft, Store as StoreIcon } from "lucide-react";
@@ -6,6 +7,32 @@ import { prisma } from "@/lib/prisma";
 import { HomeClient } from "@/components/HomeClient";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ storeSlug: string }>;
+}): Promise<Metadata> {
+  const { storeSlug } = await params;
+  const store = await prisma.store.findUnique({
+    where: { slug: storeSlug },
+    select: { name: true, tagline: true, logoUrl: true, city: true },
+  });
+  if (!store) {
+    return { title: "Boutique introuvable — Albedo'o" };
+  }
+  const title = `${store.name} — Boutique en ligne (${store.city})`;
+  const description = store.tagline || `Découvrez les produits de ${store.name} propulsée par Albedo'o.`;
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      images: store.logoUrl ? [{ url: store.logoUrl }] : undefined,
+    },
+  };
+}
 
 export default async function TenantStorefrontPage({
   params,

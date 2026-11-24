@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { clearSessionCookie, getCurrentUser, setSessionCookie } from "@/lib/auth";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function GET() {
   const user = await getCurrentUser();
@@ -30,6 +31,15 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = getClientIp(req.headers);
+    const rl = checkRateLimit(`auth:login:${ip}`, 12, 60_000);
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: `Trop de tentatives. Réessayez dans ${rl.retryAfterSec}s.` },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
     const { email, password } = body as {
       email?: string;

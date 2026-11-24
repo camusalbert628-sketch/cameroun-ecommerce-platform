@@ -62,6 +62,7 @@ export async function POST(req: NextRequest) {
       zoneId,
       items,
       useLoyaltyPoints,
+      couponCode,
     } = body as {
       customerName: string;
       customerPhone: string;
@@ -74,6 +75,7 @@ export async function POST(req: NextRequest) {
       zoneId?: string;
       items: { productId: string; variantId?: string; quantity: number }[];
       useLoyaltyPoints?: boolean;
+      couponCode?: string;
     };
 
     if (!customerName || !customerPhone || !city || !quarter || !deliveryAddress || !items?.length) {
@@ -233,8 +235,33 @@ export async function POST(req: NextRequest) {
       }
 
       let discountFcfa = 0;
+      let appliedCouponCode: string | null = null;
       if (useLoyaltyPoints && user && user.loyaltyPoints >= 100) {
         discountFcfa = Math.min(Math.floor(user.loyaltyPoints / 100) * 1000, Math.round(subtotalFcfa * 0.1));
+      }
+
+      if (couponCode?.trim()) {
+        const coupon = await tx.coupon.findUnique({
+          where: { code: couponCode.trim().toUpperCase() },
+        });
+        const isCouponValid =
+          coupon &&
+          coupon.active &&
+          (!coupon.expiresAt || coupon.expiresAt > new Date()) &&
+          (coupon.maxUses === null || coupon.usedCount < coupon.maxUses) &&
+          subtotalFcfa >= coupon.minOrderFcfa;
+        if (isCouponValid) {
+          const couponDiscount =
+            coupon.discountType === "PERCENT"
+              ? Math.round((subtotalFcfa * coupon.value) / 100)
+              : coupon.value;
+          discountFcfa = Math.min(subtotalFcfa, discountFcfa + couponDiscount);
+          appliedCouponCode = coupon.code;
+          await tx.coupon.update({
+            where: { id: coupon.id },
+            data: { usedCount: { increment: 1 } },
+          });
+        }
       }
 
       const totalFcfa = Math.max(0, subtotalFcfa + deliveryFeeFcfa - discountFcfa);
@@ -281,6 +308,7 @@ export async function POST(req: NextRequest) {
           status,
           subtotalFcfa,
           deliveryFeeFcfa,
+          couponCode: appliedCouponCode,
           discountFcfa,
           totalFcfa,
           commissionTotalFcfa,

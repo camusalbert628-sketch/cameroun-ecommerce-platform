@@ -2,9 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { setSessionCookie } from "@/lib/auth";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = getClientIp(req.headers);
+    const rl = checkRateLimit(`auth:register:${ip}`, 8, 60_000);
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: `Trop d'inscriptions depuis cette IP. Réessayez dans ${rl.retryAfterSec}s.` },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
     const { name, email, password, phone, city } = body as {
       name?: string;

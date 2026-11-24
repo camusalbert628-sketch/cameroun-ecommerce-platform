@@ -30,6 +30,7 @@ model Store {
   invoices      BillingInvoice[]
   analytics     AnalyticsEvent[]
   notifications NotificationLog[]
+  coupons       Coupon[]
 }
 
 model NotificationLog {
@@ -191,6 +192,7 @@ model Order {
   status              String       @default("PENDING_PAYMENT")
   subtotalFcfa        Int
   deliveryFeeFcfa     Int
+  couponCode          String?
   discountFcfa        Int          @default(0)
   totalFcfa           Int
   commissionTotalFcfa Int          @default(0)
@@ -281,5 +283,39 @@ model DeliveryZone {
   supportsCod    Boolean @default(true)
   codMaxFcfa     Int     @default(150000)
   relayPointName String?
+}
+
+model Coupon {
+  id           String    @id @default(cuid())
+  storeId      String?
+  store        Store?    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  code         String    @unique
+  discountType String    @default("PERCENT") // PERCENT, FIXED
+  value        Int       // % (ex: 10) ou FCFA (ex: 2000)
+  minOrderFcfa Int       @default(0)
+  maxUses      Int?
+  usedCount    Int       @default(0)
+  active       Boolean   @default(true)
+  expiresAt    DateTime?
+  createdAt    DateTime  @default(now())
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String?
+  storeId   String?
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
 }
 

@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+Allow: /catalogue
+Allow: /produit/
+Allow: /s/
+Allow: /saas
+Allow: /suivi
+Disallow: /api/
+Disallow: /admin
+Disallow: /direction
+Disallow: /logistique
+Disallow: /super-admin
+Disallow: /vendeur
+
+Sitemap: https://cameroun-ecommerce-platform.vercel.app/sitemap.xml

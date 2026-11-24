@@ -60,6 +60,10 @@ export default function CheckoutPage() {
   const [deliveryMethod, setDeliveryMethod] = useState("INTERNAL_DOUALA");
   const [paymentMethod, setPaymentMethod] = useState("ORANGE_MONEY");
   const [useLoyaltyPoints, setUseLoyaltyPoints] = useState(false);
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountFcfa: number; label: string } | null>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [couponLoading, setCouponLoading] = useState(false);
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -85,7 +89,32 @@ export default function CheckoutPage() {
       ? Math.min(Math.floor(user.loyaltyPoints / 100) * 1000, Math.round(cartTotal * 0.1))
       : 0;
 
-  const finalTotal = Math.max(0, cartTotal + deliveryFee - loyaltyDiscount);
+  const couponDiscount = appliedCoupon ? appliedCoupon.discountFcfa : 0;
+  const finalTotal = Math.max(0, cartTotal + deliveryFee - loyaltyDiscount - couponDiscount);
+
+  const handleApplyCoupon = async () => {
+    if (!couponInput.trim()) return;
+    setCouponError(null);
+    setCouponLoading(true);
+    try {
+      const res = await fetch("/api/coupons/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: couponInput.trim(), subtotalFcfa: cartTotal }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.valid) {
+        setAppliedCoupon(null);
+        setCouponError(data.error || "Code promo invalide.");
+      } else {
+        setAppliedCoupon({ code: data.code, discountFcfa: data.discountFcfa, label: data.label });
+      }
+    } catch {
+      setCouponError("Erreur de vérification.");
+    } finally {
+      setCouponLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,6 +135,7 @@ export default function CheckoutPage() {
           deliveryMethod,
           paymentMethod,
           useLoyaltyPoints,
+          couponCode: appliedCoupon?.code || undefined,
           items: cart.map((i) => ({ productId: i.productId, variantId: i.variantId, quantity: i.quantity })),
         }),
       });
@@ -118,6 +148,25 @@ export default function CheckoutPage() {
         setOutOfStockAlerts(data.outOfStockAlerts || []);
         clearCart();
         refreshAuth();
+
+        if (paymentMethod !== "CASH_ON_DELIVERY" && data.order?.orderNumber) {
+          try {
+            const initRes = await fetch("/api/payments/initiate", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ orderNumber: data.order.orderNumber }),
+            });
+            if (initRes.ok) {
+              const initData = await initRes.json();
+              if (initData.authorizationUrl) {
+                window.location.href = initData.authorizationUrl;
+                return;
+              }
+            }
+          } catch {
+            // fallback to built-in confirmation view
+          }
+        }
       }
     } catch {
       setError("Erreur réseau lors de la commande.");
@@ -429,6 +478,42 @@ export default function CheckoutPage() {
               </label>
             )}
 
+            <div className="space-y-2 border-t border-slate-100 pt-4">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={couponInput}
+                  onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                  placeholder="Code promo (ex: ALBEDOO10)"
+                  className="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold uppercase focus:border-orange-500 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={handleApplyCoupon}
+                  disabled={couponLoading || !couponInput.trim()}
+                  className="rounded-xl bg-[#0B192C] px-3.5 py-2 text-xs font-bold text-white hover:bg-[#1E3A5F] disabled:opacity-50 cursor-pointer"
+                >
+                  {couponLoading ? "..." : "Appliquer"}
+                </button>
+              </div>
+              {couponError && <p className="text-xs text-red-600">{couponError}</p>}
+              {appliedCoupon && (
+                <div className="flex items-center justify-between rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
+                  <span>Code {appliedCoupon.code} ({appliedCoupon.label})</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAppliedCoupon(null);
+                      setCouponInput("");
+                    }}
+                    className="text-emerald-800 underline cursor-pointer"
+                  >
+                    Retirer
+                  </button>
+                </div>
+              )}
+            </div>
+
             <div className="space-y-2 border-t border-slate-100 pt-4 text-sm">
               <div className="flex justify-between text-slate-600">
                 <span>Sous-total</span>
@@ -444,6 +529,12 @@ export default function CheckoutPage() {
                 <div className="flex justify-between text-emerald-700 font-semibold">
                   <span>Remise fidélité</span>
                   <span className="tabular-nums">-{formatFcfa(loyaltyDiscount)}</span>
+                </div>
+              )}
+              {couponDiscount > 0 && (
+                <div className="flex justify-between text-emerald-700 font-semibold">
+                  <span>Code promo ({appliedCoupon?.code})</span>
+                  <span className="tabular-nums">-{formatFcfa(couponDiscount)}</span>
                 </div>
               )}
               <div className="flex justify-between border-t border-slate-200 pt-3 text-lg font-extrabold text-[#0B192C]">

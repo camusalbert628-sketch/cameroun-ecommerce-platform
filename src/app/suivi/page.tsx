@@ -1,6 +1,7 @@
 "use client";
 
 import React, { Suspense, useEffect, useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Search, PackageCheck, CheckCircle2, AlertTriangle, MessageSquarePlus, FileText, Printer, X } from "lucide-react";
 import { formatFcfa, ORDER_STATUS_META, PAYMENT_METHOD_LABELS, DELIVERY_METHOD_LABELS } from "@/lib/format";
@@ -158,6 +159,12 @@ function SuiviContent() {
                   >
                     <FileText className="h-3.5 w-3.5" /> Facture OHADA
                   </button>
+                  <Link
+                    href={`/facture/${encodeURIComponent(order.orderNumber)}`}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#0B192C] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#1E3A5F]"
+                  >
+                    PDF
+                  </Link>
                   <span className={`rounded-full border px-3 py-1 text-xs font-bold ${statusMeta.color}`}>
                     {statusMeta.label}
                   </span>
