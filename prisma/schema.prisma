@@ -84,14 +84,86 @@ model AnalyticsEvent {
 }
 
 model Subscription {
-  id               String   @id @default(cuid())
-  storeId          String
-  store            Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  plan             String   // STARTER, PRO, BUSINESS
-  priceFcfa        Int      @default(0)
-  status           String   @default("ACTIVE") // ACTIVE, PAST_DUE, CANCELLED
+  id               String        @id @default(cuid())
+  storeId          String?
+  store            Store?        @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  userId           String?
+  draftId          String?
+  plan             String        // STARTER, PRO, BUSINESS
+  priceFcfa        Int           @default(0)
+  currency         String        @default("FCFA")
+  status           String        @default("PENDING_PAYMENT") // PENDING_PAYMENT, ACTIVE, PAST_DUE, CANCELLED, EXPIRED
   currentPeriodEnd DateTime
-  createdAt        DateTime @default(now())
+  createdAt        DateTime      @default(now())
+  payments         SaaSPayment[]
+}
+
+model OAuthAccount {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider          String   // google
+  providerAccountId String
+  email             String?
+  createdAt         DateTime @default(now())
+
+  @@unique([provider, providerAccountId])
+}
+
+model StoreDraft {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  storeName String?
+  slug      String?
+  plan      String   @default("PRO")
+  dataJson  String
+  status    String   @default("DRAFT") // DRAFT, PENDING_PAYMENT, PROVISIONED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SaaSPayment {
+  id             String       @id @default(cuid())
+  subscriptionId String
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  userId         String
+  method         String       // ORANGE_MONEY, MTN_MOMO, VISA, MASTERCARD, BANK_TRANSFER
+  provider       String       // NOTCHPAY, CINETPAY, BANK_TRANSFER
+  reference      String       @unique
+  providerTxId   String?
+  amountFcfa     Int
+  currency       String       @default("FCFA")
+  status         String       @default("CREATED") // CREATED, PENDING, PROCESSING, SUCCESS, FAILED, CANCELLED, EXPIRED, REFUNDED, MANUAL_REVIEW
+  proofUrl       String?
+  rawPayload     String?
+  verifiedAt     DateTime?
+  reviewedById   String?
+  reviewNote     String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model PaymentWebhookEvent {
+  id             String    @id @default(cuid())
+  provider       String
+  eventType      String
+  reference      String?
+  signatureValid Boolean   @default(false)
+  payload        String
+  processedAt    DateTime?
+  createdAt      DateTime  @default(now())
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actorRole  String?
+  action     String
+  targetType String
+  targetId   String
+  details    String?
+  createdAt  DateTime @default(now())
 }
 
 model User {
@@ -111,6 +183,8 @@ model User {
   vendorProfile VendorProfile?
   orders        Order[]
   claims        Claim[]
+  oauthAccounts OAuthAccount[]
+  storeDrafts   StoreDraft[]
 }
 
 model VendorProfile {

@@ -3,7 +3,19 @@
 import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { User, Gift, LogOut, Package, ArrowRight, Store, ShieldAlert } from "lucide-react";
+import {
+  User,
+  Gift,
+  LogOut,
+  Package,
+  ArrowRight,
+  Store,
+  ShieldAlert,
+  Eye,
+  EyeOff,
+  Loader2,
+  CheckCircle2,
+} from "lucide-react";
 import { useApp } from "@/components/Providers";
 import { Select } from "@/components/ui/Select";
 import { formatFcfa, ORDER_STATUS_META, ROLE_LABELS } from "@/lib/format";
@@ -17,21 +29,59 @@ interface OrderSummary {
   createdAt: string;
 }
 
+function getPasswordStrength(pwd: string): { label: string; color: string; width: string } {
+  if (!pwd) return { label: "", color: "bg-slate-200", width: "0%" };
+  let score = 0;
+  if (pwd.length >= 6) score++;
+  if (pwd.length >= 10) score++;
+  if (/[A-Z]/.test(pwd) && /[0-9]/.test(pwd)) score++;
+  if (/[^A-Za-z0-9]/.test(pwd)) score++;
+  if (score <= 1) return { label: "Faible", color: "bg-red-500", width: "25%" };
+  if (score === 2) return { label: "Moyen", color: "bg-amber-500", width: "55%" };
+  if (score === 3) return { label: "Bon", color: "bg-emerald-500", width: "80%" };
+  return { label: "Fort", color: "bg-emerald-600", width: "100%" };
+}
+
 function CompteContent() {
   const { user, refreshAuth, logout, showToast } = useApp();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect");
-  const unauthorized = searchParams.get("error") === "unauthorized";
+  const errParam = searchParams.get("error");
+  const resetTokenParam = searchParams.get("resetToken");
 
-  const [mode, setMode] = useState<"login" | "register">("login");
-  const [name, setName] = useState("");
+  const [mode, setMode] = useState<"login" | "register" | "forgot">("login");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPwd, setShowPwd] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [phone, setPhone] = useState("+237 6");
   const [city, setCity] = useState("Douala");
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [infoMsg, setInfoMsg] = useState<string | null>(null);
+  const [googleConfigured, setGoogleConfigured] = useState<boolean>(true);
   const [orders, setOrders] = useState<OrderSummary[]>([]);
+
+  useEffect(() => {
+    fetch("/api/auth/google/status")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d && typeof d.configured === "boolean") setGoogleConfigured(d.configured);
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (errParam === "google_not_configured") {
+      setError("L'authentification Google OAuth n'est pas encore configurée sur le serveur (GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET requis).");
+    } else if (errParam === "google_oauth_failed" || errParam === "google_token_error") {
+      setError("La connexion avec Google a échoué. Veuillez réessayer ou utiliser votre email.");
+    }
+  }, [errParam]);
 
   useEffect(() => {
     if (user) {
@@ -46,38 +96,141 @@ function CompteContent() {
   const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    const endpoint = mode === "login" ? "/api/auth" : "/api/auth/register";
-    const payload =
-      mode === "login"
-        ? { email, password }
-        : { name, email, password, phone, city };
+    setInfoMsg(null);
 
-    const res = await fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    if (res.ok) {
-      await refreshAuth();
-      showToast(mode === "login" ? "Connexion réussie." : "Compte créé (+100 pts fidélité) !");
-      if (redirectTo) {
-        router.push(redirectTo);
+    if (mode === "forgot") {
+      setSubmitting(true);
+      try {
+        const res = await fetch("/api/auth/forgot-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
+        const d = await res.json();
+        if (res.ok) setInfoMsg(d.message || "Email de réinitialisation envoyé.");
+        else setError(d.error || "Erreur lors de l'envoi.");
+      } finally {
+        setSubmitting(false);
       }
-    } else {
-      const d = await res.json();
-      setError(d.error || "Erreur d'authentification.");
+      return;
+    }
+
+    if (mode === "register") {
+      if (!lastName.trim() || !firstName.trim()) {
+        setError("Nom et prénom requis.");
+        return;
+      }
+      if (password !== confirmPassword) {
+        setError("Les mots de passe ne correspondent pas.");
+        return;
+      }
+      if (!acceptedTerms) {
+        setError("Veuillez accepter les conditions d'utilisation.");
+        return;
+      }
+    }
+
+    setSubmitting(true);
+    try {
+      const endpoint = mode === "login" ? "/api/auth" : "/api/auth/register";
+      const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
+      const payload =
+        mode === "login"
+          ? { email, password }
+          : { name: fullName, email, password, phone, city };
+
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        await refreshAuth();
+        showToast(mode === "login" ? "Connexion réussie." : "Compte créé (+100 pts fidélité) !");
+        if (redirectTo && redirectTo.startsWith("/")) {
+          router.push(redirectTo);
+        }
+      } else {
+        const d = await res.json();
+        setError(d.error || "Erreur d'authentification.");
+      }
+    } finally {
+      setSubmitting(false);
     }
   };
 
+  const handleGoogleAuth = () => {
+    if (!googleConfigured) {
+      setError("Google OAuth nécessite GOOGLE_CLIENT_ID et GOOGLE_CLIENT_SECRET dans les variables d'environnement.");
+      return;
+    }
+    const target = redirectTo && redirectTo.startsWith("/") ? redirectTo : "/inscription-boutique";
+    window.location.href = `/api/auth/google?redirect=${encodeURIComponent(target)}`;
+  };
+
+  const handleResetConfirm = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetTokenParam || password.length < 6) return;
+    setSubmitting(true);
+    const res = await fetch("/api/auth/reset-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: resetTokenParam, password }),
+    });
+    const d = await res.json();
+    setSubmitting(false);
+    if (res.ok) {
+      showToast("Mot de passe mis à jour ! Connectez-vous.");
+      router.replace("/compte");
+    } else {
+      setError(d.error || "Lien invalide.");
+    }
+  };
+
+  if (resetTokenParam && !user) {
+    return (
+      <div className="mx-auto max-w-md px-4 py-16">
+        <form onSubmit={handleResetConfirm} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+          <h1 className="text-xl font-extrabold text-[#0B192C]">Nouveau mot de passe</h1>
+          {error && <div className="rounded-xl bg-red-50 p-3 text-xs font-semibold text-red-700">{error}</div>}
+          <input
+            type="password"
+            required
+            minLength={6}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Nouveau mot de passe (min. 6 car.)"
+            className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
+          />
+          <button
+            type="submit"
+            disabled={submitting}
+            className="w-full rounded-xl bg-[#0B192C] py-3 text-sm font-bold text-white cursor-pointer"
+          >
+            {submitting ? "Mise à jour..." : "Enregistrer le mot de passe"}
+          </button>
+        </form>
+      </div>
+    );
+  }
+
   if (!user) {
+    const strength = getPasswordStrength(password);
     return (
       <div className="mx-auto max-w-5xl px-4 py-12 grid grid-cols-1 gap-8 md:grid-cols-2">
         <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm space-y-5">
-          {unauthorized && (
+          {errParam === "unauthorized" && (
             <div className="flex items-center gap-2 rounded-xl bg-amber-50 border border-amber-200 p-3 text-xs font-semibold text-amber-800">
               <ShieldAlert className="h-4 w-4 shrink-0" />
               Votre rôle actuel ne permet pas d&apos;accéder à cette interface protégée.
+            </div>
+          )}
+
+          {redirectTo === "/inscription-boutique" && (
+            <div className="flex items-center gap-2 rounded-xl bg-orange-50 border border-orange-200 p-3 text-xs font-semibold text-orange-800">
+              <Store className="h-4 w-4 shrink-0" />
+              Connectez-vous ou créez un compte pour lancer la création de votre boutique SaaS.
             </div>
           )}
 
@@ -87,6 +240,7 @@ function CompteContent() {
               onClick={() => {
                 setMode("login");
                 setError(null);
+                setInfoMsg(null);
               }}
               className={`flex-1 rounded-lg py-2 transition cursor-pointer ${
                 mode === "login" ? "bg-[#0B192C] text-white shadow-xs" : "text-slate-600"
@@ -99,21 +253,26 @@ function CompteContent() {
               onClick={() => {
                 setMode("register");
                 setError(null);
+                setInfoMsg(null);
               }}
               className={`flex-1 rounded-lg py-2 transition cursor-pointer ${
                 mode === "register" ? "bg-[#0B192C] text-white shadow-xs" : "text-slate-600"
               }`}
             >
-              Créer un compte Client
+              Créer un compte
             </button>
           </div>
 
           <div>
             <h1 className="text-2xl font-extrabold text-[#0B192C]">
-              {mode === "login" ? "Connexion à votre espace" : "Créer un compte Client"}
+              {mode === "login"
+                ? "Connexion à votre espace"
+                : mode === "register"
+                ? "Créer un compte COMMERCIA"
+                : "Mot de passe oublié"}
             </h1>
             <p className="text-xs text-slate-500 mt-1">
-              Accédez à vos commandes, points de fidélité ou à votre espace marchand sécurisé.
+              Accédez à vos commandes, points de fidélité ou à votre assistant de création SaaS.
             </p>
           </div>
 
@@ -123,18 +282,59 @@ function CompteContent() {
             </div>
           )}
 
+          {infoMsg && (
+            <div className="flex items-center gap-2 rounded-xl bg-emerald-50 border border-emerald-200 p-3 text-xs font-semibold text-emerald-700">
+              <CheckCircle2 className="h-4 w-4 shrink-0" /> {infoMsg}
+            </div>
+          )}
+
+          {mode !== "forgot" && (
+            <>
+              <button
+                type="button"
+                onClick={handleGoogleAuth}
+                className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-slate-300 bg-white py-2.5 text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-50 transition cursor-pointer"
+              >
+                <svg className="h-4 w-4" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z" />
+                  <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.14C3.26 21.3 7.31 24 12 24Z" />
+                  <path fill="#FBBC05" d="M5.28 14.24c-.24-.72-.38-1.49-.38-2.24s.14-1.52.38-2.24V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.99-3.14Z" />
+                  <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96Z" />
+                </svg>
+                {mode === "login" ? "Se connecter avec Google" : "S'inscrire avec Google"}
+              </button>
+              <div className="relative flex items-center py-1">
+                <div className="flex-grow border-t border-slate-200" />
+                <span className="mx-3 shrink text-[11px] font-semibold text-slate-400">ou par e-mail</span>
+                <div className="flex-grow border-t border-slate-200" />
+              </div>
+            </>
+          )}
+
           <form onSubmit={handleAuthSubmit} className="space-y-3">
             {mode === "register" && (
               <>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Nom complet *</label>
-                  <input
-                    required
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Ex: Jean-Paul Mbarga"
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                  />
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Nom *</label>
+                    <input
+                      required
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      placeholder="Ex: Mbarga"
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Prénom *</label>
+                    <input
+                      required
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      placeholder="Ex: Jean-Paul"
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
+                    />
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -174,23 +374,99 @@ function CompteContent() {
                 className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
               />
             </div>
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Mot de passe *</label>
-              <input
-                type="password"
-                required
-                minLength={6}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-              />
-            </div>
+
+            {mode !== "forgot" && (
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-slate-700">Mot de passe *</label>
+                  {mode === "login" && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMode("forgot");
+                        setError(null);
+                      }}
+                      className="text-[11px] font-semibold text-orange-600 hover:underline cursor-pointer"
+                    >
+                      Mot de passe oublié ?
+                    </button>
+                  )}
+                </div>
+                <div className="relative">
+                  <input
+                    type={showPwd ? "text" : "password"}
+                    required
+                    minLength={6}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2.5 pr-10 text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPwd((v) => !v)}
+                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+                  >
+                    {showPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                {mode === "register" && password && (
+                  <div className="mt-1.5 space-y-1">
+                    <div className="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
+                      <div className={`h-full transition-all ${strength.color}`} style={{ width: strength.width }} />
+                    </div>
+                    <p className="text-[10px] font-semibold text-slate-500">Robustesse : {strength.label}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {mode === "register" && (
+              <>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Confirmation mot de passe *</label>
+                  <input
+                    type={showPwd ? "text" : "password"}
+                    required
+                    minLength={6}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
+                  />
+                </div>
+                <label className="flex items-start gap-2 text-xs text-slate-600 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={acceptedTerms}
+                    onChange={(e) => setAcceptedTerms(e.target.checked)}
+                    className="mt-0.5"
+                  />
+                  <span>J&apos;accepte les conditions d&apos;utilisation de COMMERCIA / Albedo&apos;o.</span>
+                </label>
+              </>
+            )}
+
             <button
               type="submit"
-              className="w-full rounded-xl bg-[#0B192C] py-3 text-sm font-bold text-white hover:bg-[#1E3A5F] transition cursor-pointer"
+              disabled={submitting}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#0B192C] py-3 text-sm font-bold text-white hover:bg-[#1E3A5F] disabled:opacity-60 transition cursor-pointer"
             >
-              {mode === "login" ? "Se connecter" : "Créer mon compte (+100 pts)"}
+              {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+              {mode === "login"
+                ? "Se connecter"
+                : mode === "register"
+                ? "Créer mon compte (+100 pts)"
+                : "Envoyer le lien"}
             </button>
+
+            {mode === "forgot" && (
+              <button
+                type="button"
+                onClick={() => setMode("login")}
+                className="w-full text-center text-xs font-semibold text-slate-500 hover:text-[#0B192C] cursor-pointer"
+              >
+                ← Retour à la connexion
+              </button>
+            )}
           </form>
         </div>
 

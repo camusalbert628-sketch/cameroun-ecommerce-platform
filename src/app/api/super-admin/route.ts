@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import * as webpush from "web-push";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { provisionStoreFromSubscription } from "@/lib/saas-provisioning";
 
 function isSuperAdmin(role?: string | null) {
   return Boolean(role && ["ADMIN", "EXECUTIVE", "SUPER_ADMIN"].includes(role));
@@ -32,6 +33,8 @@ export async function GET() {
     notifications,
     pushCount,
     analyticsCount,
+    saasPayments,
+    auditLogs,
   ] = await Promise.all([
     prisma.store.findMany({
       include: {
@@ -108,6 +111,16 @@ export async function GET() {
     prisma.notificationLog.findMany({ orderBy: { createdAt: "desc" }, take: 50 }),
     prisma.pushSubscription.count(),
     prisma.analyticsEvent.count(),
+    prisma.saaSPayment.findMany({
+      include: {
+        subscription: {
+          include: { store: { select: { id: true, name: true, slug: true } } },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    }),
+    prisma.auditLog.findMany({ orderBy: { createdAt: "desc" }, take: 30 }),
   ]);
 
   const mrrFcfa = activeSubs.reduce((sum, s) => sum + s.priceFcfa, 0);
@@ -125,6 +138,8 @@ export async function GET() {
     coupons,
     invoices,
     notifications,
+    saasPayments,
+    auditLogs,
     metrics: {
       totalStores: stores.length,
       activeStores: stores.filter((s) => s.status === "ACTIVE").length,
@@ -319,6 +334,57 @@ export async function PATCH(req: NextRequest) {
       data: { active: Boolean(body.active) },
     });
     return NextResponse.json({ coupon });
+  }
+
+  if (entity === "SAAS_PAYMENT" && body.paymentId) {
+    const payment = await prisma.saaSPayment.findUnique({ where: { id: body.paymentId } });
+    if (!payment) return NextResponse.json({ error: "Paiement introuvable." }, { status: 404 });
+
+    if (body.decision === "APPROVE") {
+      await prisma.saaSPayment.update({
+        where: { id: payment.id },
+        data: {
+          status: "SUCCESS",
+          verifiedAt: new Date(),
+          reviewedById: user.id,
+          reviewNote: body.reviewNote || "Validé par l'administration",
+        },
+      });
+      await prisma.auditLog.create({
+        data: {
+          actorId: user.id,
+          actorRole: user.role,
+          action: "SAAS_PAYMENT_APPROVED",
+          targetType: "SaaSPayment",
+          targetId: payment.id,
+          details: `Paiement ${payment.reference} validé (${payment.amountFcfa} FCFA)`,
+        },
+      });
+      const provisioned = await provisionStoreFromSubscription(payment.subscriptionId, user.id);
+      return NextResponse.json({ ok: true, store: provisioned.store });
+    }
+
+    if (body.decision === "REJECT") {
+      await prisma.saaSPayment.update({
+        where: { id: payment.id },
+        data: {
+          status: "FAILED",
+          reviewedById: user.id,
+          reviewNote: body.reviewNote || "Justificatif refusé",
+        },
+      });
+      await prisma.auditLog.create({
+        data: {
+          actorId: user.id,
+          actorRole: user.role,
+          action: "SAAS_PAYMENT_REJECTED",
+          targetType: "SaaSPayment",
+          targetId: payment.id,
+          details: `Paiement ${payment.reference} refusé : ${body.reviewNote || "Non conforme"}`,
+        },
+      });
+      return NextResponse.json({ ok: true });
+    }
   }
 
   if (body.userId) {

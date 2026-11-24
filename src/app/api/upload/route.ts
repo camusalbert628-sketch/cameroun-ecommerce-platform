@@ -8,12 +8,14 @@ const ALLOWED_IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp"];
 export async function POST(req: NextRequest) {
   try {
     const user = await getCurrentUser();
-    const isOnboarding = req.nextUrl.searchParams.get("scope") === "onboarding";
+    const scope = req.nextUrl.searchParams.get("scope");
+    const isOnboarding = scope === "onboarding";
+    const isPaymentProof = scope === "payment-proof" && Boolean(user);
     const isAuthorizedStaff = Boolean(
       user && ["VENDOR", "ADMIN", "EXECUTIVE", "SUPER_ADMIN"].includes(user.role)
     );
 
-    if (!isAuthorizedStaff && !isOnboarding) {
+    if (!isAuthorizedStaff && !isOnboarding && !isPaymentProof) {
       return NextResponse.json({ error: "Non autorisé." }, { status: 403 });
     }
 

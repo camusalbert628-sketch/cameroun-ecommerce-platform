@@ -142,7 +142,7 @@ function createDefaultDraft(): OnboardingDraft {
 
 export default function InscriptionBoutiquePage() {
   const router = useRouter();
-  const { refreshAuth, showToast } = useApp();
+  const { user, showToast } = useApp();
   const [draft, setDraft] = useState<OnboardingDraft>(createDefaultDraft);
   const [hydrated, setHydrated] = useState(false);
   const [savedAt, setSavedAt] = useState<string | null>(null);
@@ -187,7 +187,31 @@ export default function InscriptionBoutiquePage() {
         if (d?.categories) setCategories(d.categories);
       })
       .catch(() => {});
+
+    fetch("/api/saas/drafts")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.draft?.data) {
+          setDraft((prev) => ({
+            ...prev,
+            ...d.draft.data,
+            password: "",
+          }));
+        }
+      })
+      .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      setDraft((prev) => ({
+        ...prev,
+        ownerName: prev.ownerName || user.name || "",
+        email: prev.email || user.email || "",
+        phone: prev.phone === "+237 6" && user.phone ? user.phone : prev.phone,
+      }));
+    }
+  }, [user]);
 
   useEffect(() => {
     if (!hydrated || createdStore) return;
@@ -199,6 +223,23 @@ export default function InscriptionBoutiquePage() {
     } catch {
       // ignore storage errors
     }
+
+    const syncTimer = setTimeout(() => {
+      const { password: _p, ...safeDraft } = draft;
+      void _p;
+      fetch("/api/saas/drafts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          storeName: draft.storeName,
+          customSlug: slugify(draft.customSlug),
+          plan: draft.plan,
+          data: safeDraft,
+        }),
+      }).catch(() => {});
+    }, 1200);
+
+    return () => clearTimeout(syncTimer);
   }, [draft, hydrated, createdStore]);
 
   useEffect(() => {
@@ -275,7 +316,7 @@ export default function InscriptionBoutiquePage() {
     if (stepNum === 4) {
       if (!draft.ownerName.trim()) return "Veuillez renseigner le nom complet du dirigeant.";
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(draft.email.trim())) return "Veuillez saisir une adresse email valide.";
-      if (draft.password.length < 6) return "Le mot de passe doit contenir au moins 6 caractères.";
+      if (!user && draft.password.length < 6) return "Le mot de passe doit contenir au moins 6 caractères.";
     }
     if (stepNum === 6 && draft.productMode === "CUSTOM") {
       const invalid = draft.initialProducts.some((p) => !p.title.trim() || Number(p.priceFcfa) <= 0);
@@ -361,75 +402,45 @@ export default function InscriptionBoutiquePage() {
 
     setSubmitting(true);
     try {
-      const res = await fetch("/api/stores", {
+      const { password: _p, ...safeDraft } = draft;
+      void _p;
+      const res = await fetch("/api/saas/drafts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          idempotencyKey: draft.idempotencyKey,
-          ownerName: draft.ownerName,
-          email: draft.email,
-          password: draft.password,
-          phone: draft.phone,
           storeName: draft.storeName,
           customSlug: slugify(draft.customSlug),
-          tagline: draft.tagline,
-          description: draft.description,
-          logoUrl: draft.logoUrl,
-          bannerUrl: draft.bannerUrl,
-          sector: draft.sector,
-          commerceType: draft.commerceType,
-          currency: draft.currency,
-          country: draft.country,
-          city: draft.city,
-          quarter: draft.quarter,
-          address: draft.address,
-          businessPhone: draft.businessPhone,
-          whatsappPhone: draft.whatsappPhone,
-          businessEmail: draft.businessEmail,
-          primaryColor: draft.primaryColor,
-          secondaryColor: draft.secondaryColor,
-          accentColor: draft.accentColor,
-          buttonColor: draft.buttonColor,
-          themePreset: draft.themePreset,
           plan: draft.plan,
-          rccm: draft.rccm,
-          niu: draft.niu,
-          commercialConfig: {
-            paymentMethods: draft.paymentMethods,
-            deliveryEnabled: draft.deliveryEnabled,
-            pickupEnabled: draft.pickupEnabled,
-            stockManagement: draft.stockManagement,
-            showPrices: draft.showPrices,
-            notificationsEnabled: draft.notificationsEnabled,
+          data: {
+            ...safeDraft,
+            customSlug: slugify(draft.customSlug),
+            productMode:
+              draft.productMode === "CUSTOM" && draft.initialProducts.length === 0
+                ? "EMPTY"
+                : draft.productMode,
+            initialProducts: draft.initialProducts.map((p) => ({
+              title: p.title,
+              description: p.description,
+              priceFcfa: Number(p.priceFcfa),
+              costPriceFcfa: Number(p.costPriceFcfa) || 0,
+              stock: Number(p.stock) || 0,
+              categoryId: p.categoryId || undefined,
+              imageUrl: p.imageUrl || undefined,
+            })),
           },
-          productMode:
-            draft.productMode === "CUSTOM" && draft.initialProducts.length === 0
-              ? "EMPTY"
-              : draft.productMode,
-          initialProducts: draft.initialProducts.map((p) => ({
-            title: p.title,
-            description: p.description,
-            priceFcfa: Number(p.priceFcfa),
-            costPriceFcfa: Number(p.costPriceFcfa) || 0,
-            stock: Number(p.stock) || 0,
-            categoryId: p.categoryId || undefined,
-            imageUrl: p.imageUrl || undefined,
-          })),
         }),
       });
 
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "Impossible de créer la boutique.");
+        setError(data.error || "Impossible d'enregistrer votre configuration.");
         return;
       }
 
-      localStorage.removeItem(DRAFT_STORAGE_KEY);
-      await refreshAuth();
-      setCreatedStore(data.store);
-      showToast(`Boutique « ${data.store.name} » publiée !`);
+      showToast("Configuration enregistrée ! Vérifiez votre souscription.");
+      router.push("/boutique/souscription");
     } catch {
-      setError("Erreur réseau lors de la création. Votre brouillon est conservé.");
+      setError("Erreur réseau lors de la sauvegarde. Votre brouillon est conservé.");
     } finally {
       setSubmitting(false);
     }
@@ -1368,7 +1379,7 @@ export default function InscriptionBoutiquePage() {
                   className="flex w-full items-center justify-center gap-2 rounded-2xl bg-orange-500 py-4 text-sm font-extrabold text-white shadow-sm hover:bg-orange-600 disabled:opacity-60 transition cursor-pointer"
                 >
                   {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <ShieldCheck className="h-5 w-5" />}
-                  {submitting ? "Création sécurisée en cours..." : "CRÉER MA BOUTIQUE"}
+                  {submitting ? "Enregistrement en cours..." : "CONTINUER VERS LA SOUSCRIPTION & PAIEMENT"}
                 </button>
               </div>
             )}

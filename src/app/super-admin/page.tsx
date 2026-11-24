@@ -198,6 +198,18 @@ export default function SuperAdminPage() {
   const [reviews, setReviews] = useState<ReviewRow[]>([]);
   const [zones, setZones] = useState<ZoneRow[]>([]);
   const [invoices, setInvoices] = useState<InvoiceRow[]>([]);
+  const [saasPayments, setSaasPayments] = useState<
+    {
+      id: string;
+      reference: string;
+      method: string;
+      amountFcfa: number;
+      status: string;
+      proofUrl: string | null;
+      reviewNote: string | null;
+      subscription: { plan: string; store: { name: string; slug: string } | null };
+    }[]
+  >([]);
   const [notifications, setNotifications] = useState<NotificationRow[]>([]);
   const [coupons, setCoupons] = useState<CouponRow[]>([]);
   const [health, setHealth] = useState<SystemHealth | null>(null);
@@ -265,6 +277,7 @@ export default function SuperAdminPage() {
         setZones(data.zones || []);
         setCoupons(data.coupons || []);
         setInvoices(data.invoices || []);
+        setSaasPayments(data.saasPayments || []);
         setNotifications(data.notifications || []);
         setHealth(data.systemHealth || null);
         if (data.metrics) setMetrics(data.metrics);
@@ -1044,6 +1057,94 @@ export default function SuperAdminPage() {
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm overflow-x-auto">
+            <h2 className="text-base font-extrabold text-[#0B192C] mb-4">
+              Paiements SaaS &amp; Virements à vérifier ({saasPayments.length})
+            </h2>
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-slate-200 text-slate-500 uppercase">
+                  <th className="py-3 pr-4">Référence</th>
+                  <th className="py-3 pr-4">Méthode / Plan</th>
+                  <th className="py-3 pr-4">Montant</th>
+                  <th className="py-3 pr-4">Justificatif</th>
+                  <th className="py-3 pr-4">Statut</th>
+                  <th className="py-3 text-right">Validation Admin</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {saasPayments.map((sp) => (
+                  <tr key={sp.id}>
+                    <td className="py-3 pr-4 font-bold text-[#0B192C]">{sp.reference}</td>
+                    <td className="py-3 pr-4">
+                      {sp.method} · <span className="font-semibold">{sp.subscription.plan}</span>
+                      {sp.subscription.store && (
+                        <div className="text-[10px] text-emerald-700">Boutique : {sp.subscription.store.name}</div>
+                      )}
+                    </td>
+                    <td className="py-3 pr-4 font-bold tabular-nums">{formatFcfa(sp.amountFcfa)}</td>
+                    <td className="py-3 pr-4">
+                      {sp.proofUrl ? (
+                        <a
+                          href={sp.proofUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="font-bold text-orange-600 underline"
+                        >
+                          Voir justificatif
+                        </a>
+                      ) : (
+                        <span className="text-slate-400">—</span>
+                      )}
+                    </td>
+                    <td className="py-3 pr-4">
+                      <span
+                        className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                          sp.status === "SUCCESS"
+                            ? "bg-emerald-50 text-emerald-700"
+                            : sp.status === "MANUAL_REVIEW"
+                            ? "bg-amber-50 text-amber-700"
+                            : "bg-red-50 text-red-700"
+                        }`}
+                      >
+                        {sp.status}
+                      </span>
+                    </td>
+                    <td className="py-3 text-right space-x-1.5 whitespace-nowrap">
+                      {sp.status === "MANUAL_REVIEW" && (
+                        <>
+                          <button
+                            onClick={() =>
+                              patchEntity(
+                                { entity: "SAAS_PAYMENT", paymentId: sp.id, decision: "APPROVE" },
+                                `Paiement ${sp.reference} validé et boutique activée !`
+                              )
+                            }
+                            className="rounded-lg bg-emerald-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-emerald-700 cursor-pointer"
+                          >
+                            Valider &amp; Activer
+                          </button>
+                          <button
+                            onClick={() => {
+                              const note = window.prompt("Motif du refus :") || "Justificatif non conforme";
+                              patchEntity(
+                                { entity: "SAAS_PAYMENT", paymentId: sp.id, decision: "REJECT", reviewNote: note },
+                                `Paiement ${sp.reference} refusé`
+                              );
+                            }}
+                            className="rounded-lg bg-red-50 px-2.5 py-1 text-[11px] font-bold text-red-700 hover:bg-red-100 cursor-pointer"
+                          >
+                            Refuser
+                          </button>
+                        </>
+                      )}
                     </td>
                   </tr>
                 ))}

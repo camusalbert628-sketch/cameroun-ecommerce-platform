@@ -4,6 +4,8 @@ const COOKIE_NAME = "cm_ecom_session";
 const SECRET = process.env.AUTH_SECRET || "cameroun-ecommerce-dev-secret-2026";
 
 const ROUTE_ROLES: { prefix: string; roles: string[] }[] = [
+  { prefix: "/inscription-boutique", roles: ["CLIENT", "VENDOR", "LOGISTICS", "ADMIN", "EXECUTIVE", "SUPER_ADMIN"] },
+  { prefix: "/boutique", roles: ["CLIENT", "VENDOR", "LOGISTICS", "ADMIN", "EXECUTIVE", "SUPER_ADMIN"] },
   { prefix: "/vendeur", roles: ["VENDOR", "ADMIN", "EXECUTIVE", "SUPER_ADMIN"] },
   { prefix: "/logistique", roles: ["LOGISTICS", "ADMIN", "EXECUTIVE", "SUPER_ADMIN"] },
   { prefix: "/admin", roles: ["ADMIN", "EXECUTIVE", "SUPER_ADMIN"] },
