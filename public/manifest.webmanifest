@@ -1,0 +1,31 @@
+{
+  "name": "Albedo'o — La valeur en mouvement.",
+  "short_name": "Albedo'o",
+  "description": "Boutique en ligne & Plateforme SaaS E-Commerce au Cameroun : Orange Money, MTN MoMo, Livraison Douala, Yaoundé et National.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0B192C",
+  "theme_color": "#0B192C",
+  "orientation": "portrait-primary",
+  "lang": "fr",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
