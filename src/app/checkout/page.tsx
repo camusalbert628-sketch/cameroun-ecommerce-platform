@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   CheckCircle2,
@@ -14,22 +14,47 @@ import {
 import { useApp } from "@/components/Providers";
 import { formatFcfa, DELIVERY_METHOD_LABELS, PAYMENT_METHOD_LABELS } from "@/lib/format";
 
-const ZONES = [
-  { id: "dla-c", city: "Douala", label: "Douala Centre (Akwa, Bonanjo, Bonapriso, Bali)", fee: 1500, supportsCod: true, codMax: 150000, relay: "Hub Akwa — Bd de la Liberté" },
-  { id: "dla-p", city: "Douala", label: "Douala Périphérie (Bonamoussadi, Makepe, Ndokotti, Bonabéri)", fee: 2000, supportsCod: true, codMax: 150000, relay: "Relais Bonamoussadi" },
-  { id: "yao-c", city: "Yaoundé", label: "Yaoundé Centre (Bastos, Centre-Ville, Hippodrome, Essos)", fee: 2500, supportsCod: true, codMax: 150000, relay: "Relais Bastos" },
-  { id: "yao-p", city: "Yaoundé", label: "Yaoundé Périphérie (Biyem-Assi, Odza, Mimboman)", fee: 3000, supportsCod: true, codMax: 100000, relay: "Relais Biyem-Assi" },
-  { id: "baf", city: "Bafoussam", label: "Bafoussam Urbain", fee: 3500, supportsCod: false, codMax: 0, relay: "Agence Transport Centre" },
-  { id: "kri", city: "Kribi", label: "Kribi Centre", fee: 3500, supportsCod: false, codMax: 0, relay: "Relais Kribi Port" },
-  { id: "gar", city: "Garoua", label: "Garoua Urbain", fee: 5000, supportsCod: false, codMax: 0, relay: "Relais Garoua Plateau" },
-];
+interface DeliveryZoneRow {
+  id: string;
+  city: string;
+  zoneName: string;
+  feeFcfa: number;
+  estimatedDays: string;
+  supportsCod: boolean;
+  codMaxFcfa: number;
+  relayPointName: string | null;
+}
+
+const FALLBACK_ZONE: DeliveryZoneRow = {
+  id: "default",
+  city: "Douala",
+  zoneName: "Douala Centre",
+  feeFcfa: 1500,
+  estimatedDays: "24h",
+  supportsCod: true,
+  codMaxFcfa: 150000,
+  relayPointName: "Hub Akwa",
+};
 
 export default function CheckoutPage() {
   const { cart, cartTotal, clearCart, user, refreshAuth } = useApp();
   const [customerName, setCustomerName] = useState(user?.name || "");
   const [customerPhone, setCustomerPhone] = useState(user?.phone || "+237 6");
   const [customerEmail, setCustomerEmail] = useState(user?.email || "");
-  const [selectedZoneId, setSelectedZoneId] = useState("dla-c");
+  const [zones, setZones] = useState<DeliveryZoneRow[]>([FALLBACK_ZONE]);
+  const [selectedZoneId, setSelectedZoneId] = useState("default");
+
+  useEffect(() => {
+    fetch("/api/zones")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.zones?.length > 0) {
+          setZones(d.zones);
+          setSelectedZoneId(d.zones[0].id);
+        }
+      })
+      .catch(() => {});
+  }, []);
   const [quarter, setQuarter] = useState(user?.quarter || "");
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [deliveryMethod, setDeliveryMethod] = useState("INTERNAL_DOUALA");
@@ -47,13 +72,13 @@ export default function CheckoutPage() {
   } | null>(null);
   const [outOfStockAlerts, setOutOfStockAlerts] = useState<string[]>([]);
 
-  const zone = ZONES.find((z) => z.id === selectedZoneId) || ZONES[0];
+  const zone = zones.find((z) => z.id === selectedZoneId) || zones[0] || FALLBACK_ZONE;
   const hasOnOrder = cart.some((i) => i.salesModel === "ON_ORDER");
-  const codAllowed = zone.supportsCod && !hasOnOrder && cartTotal <= zone.codMax;
+  const codAllowed = zone.supportsCod && !hasOnOrder && cartTotal <= zone.codMaxFcfa;
 
-  let deliveryFee = zone.fee;
+  let deliveryFee = zone.feeFcfa;
   if (deliveryMethod === "STORE_PICKUP") deliveryFee = 0;
-  else if (deliveryMethod === "RELAY_POINT") deliveryFee = Math.max(500, Math.round(zone.fee * 0.6));
+  else if (deliveryMethod === "RELAY_POINT") deliveryFee = Math.max(500, Math.round(zone.feeFcfa * 0.6));
 
   const loyaltyDiscount =
     useLoyaltyPoints && user && user.loyaltyPoints >= 100
@@ -211,9 +236,6 @@ export default function CheckoutPage() {
                   placeholder="+237 6XX XX XX XX"
                   className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm focus:border-[#1E3A5F] focus:outline-none"
                 />
-                <span className="text-[10px] text-slate-400">
-                  Astuce test Chap. 12 : un numéro finissant par 0000 simule un échec de paiement.
-                </span>
               </div>
             </div>
 
@@ -225,7 +247,7 @@ export default function CheckoutPage() {
                   onChange={(e) => {
                     const zId = e.target.value;
                     setSelectedZoneId(zId);
-                    const z = ZONES.find((x) => x.id === zId);
+                    const z = zones.find((x) => x.id === zId);
                     if (z && z.city !== "Douala" && deliveryMethod === "INTERNAL_DOUALA") {
                       setDeliveryMethod(z.city === "Yaoundé" ? "PARTNER_COURIER" : "INTERCITY_TRANSPORT");
                     }
@@ -235,9 +257,9 @@ export default function CheckoutPage() {
                   }}
                   className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm focus:border-[#1E3A5F] focus:outline-none"
                 >
-                  {ZONES.map((z) => (
+                  {zones.map((z) => (
                     <option key={z.id} value={z.id}>
-                      {z.label} ({formatFcfa(z.fee)})
+                      {z.zoneName} ({formatFcfa(z.feeFcfa)})
                     </option>
                   ))}
                 </select>
@@ -299,7 +321,7 @@ export default function CheckoutPage() {
                     <div className="flex-1 text-xs">
                       <div className="font-bold text-slate-900">{meta.label}</div>
                       <div className="text-slate-500">
-                        {key === "RELAY_POINT" ? `Point relais : ${zone.relay}` : meta.description}
+                        {key === "RELAY_POINT" ? `Point relais : ${zone.relayPointName || zone.city}` : meta.description}
                       </div>
                     </div>
                   </label>
@@ -350,7 +372,7 @@ export default function CheckoutPage() {
                                 ? "article Sur Commande dans le panier"
                                 : !zone.supportsCod
                                 ? `zone ${zone.city} en prépaiement uniquement`
-                                : `montant > ${formatFcfa(zone.codMax)}`
+                                : `montant > ${formatFcfa(zone.codMaxFcfa)}`
                             }`
                           : meta.feesNote}
                       </div>

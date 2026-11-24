@@ -58,10 +58,28 @@ export async function POST(req: NextRequest) {
       categoryId,
       salesModel,
       warrantyMonths,
+      imageUrl,
     } = body;
 
     if (!title || !description || !priceFcfa || !categoryId) {
       return NextResponse.json({ error: "Champs obligatoires manquants." }, { status: 400 });
+    }
+
+    // Enforce SaaS Plan Quota (STARTER = max 50 products)
+    if (user.storeId) {
+      const store = await prisma.store.findUnique({ where: { id: user.storeId } });
+      if (store?.plan === "STARTER") {
+        const count = await prisma.product.count({ where: { storeId: user.storeId } });
+        if (count >= 50) {
+          return NextResponse.json(
+            {
+              error:
+                "Limite du plan Starter atteinte (50 produits max). Passez au plan Pro ou Business dans votre espace facturation.",
+            },
+            { status: 403 }
+          );
+        }
+      }
     }
 
     const slugBase = String(title)
@@ -82,15 +100,17 @@ export async function POST(req: NextRequest) {
         sku,
         priceFcfa: Number(priceFcfa),
         costPriceFcfa: Number(costPriceFcfa || Math.round(Number(priceFcfa) * 0.82)),
+        initialStock: Number(stock || 10),
         stock: Number(stock || 10),
         salesModel: isVendor ? "MARKETPLACE_PARTNER" : salesModel || "DIRECT_RETAIL",
         qualityStatus: isVendor ? "PENDING_QC" : "APPROVED",
         warrantyMonths: Number(warrantyMonths || 6),
-        imageUrl: "/products/smartphone.jpg",
+        imageUrl: imageUrl || "/products/smartphone.jpg",
         categoryId,
+        storeId: user.storeId || null,
         vendorId: isVendor ? user.vendorProfile!.id : null,
       },
-      include: { category: true, vendor: true },
+      include: { category: true, vendor: true, variants: true },
     });
 
     return NextResponse.json({ product }, { status: 201 });

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Store, PlusCircle, Package, Wallet, ShieldCheck, AlertCircle } from "lucide-react";
+import { Store, PlusCircle, Package, Wallet, ShieldCheck, AlertCircle, Upload, CreditCard } from "lucide-react";
 import { useApp } from "@/components/Providers";
 import { formatFcfa, ORDER_STATUS_META } from "@/lib/format";
 
@@ -39,6 +39,17 @@ export default function VendeurPage() {
   const [priceFcfa, setPriceFcfa] = useState("25000");
   const [stock, setStock] = useState("15");
   const [categoryId, setCategoryId] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [uploadingImg, setUploadingImg] = useState(false);
+
+  // SaaS Billing state
+  const [billing, setBilling] = useState<{
+    store?: { plan: string; name: string; slug: string };
+    productCount: number;
+    maxProducts: number | null;
+    commissionRate: number;
+    invoices: { id: string; invoiceNumber: string; plan: string; amountFcfa: number; createdAt: string }[];
+  } | null>(null);
 
   // Variant form state
   const [variantProductId, setVariantProductId] = useState<string | null>(null);
@@ -50,10 +61,14 @@ export default function VendeurPage() {
   const isVendor = user?.role === "VENDOR" && user.vendorProfile;
 
   const loadData = async () => {
-    const [pRes, oRes] = await Promise.all([
+    const [pRes, oRes, bRes] = await Promise.all([
       fetch("/api/products?includeAll=true"),
       fetch(`/api/orders?vendorId=${user?.vendorProfile?.id || ""}`),
+      fetch("/api/billing"),
     ]);
+    if (bRes.ok) {
+      setBilling(await bRes.json());
+    }
     if (pRes.ok) {
       const pData = await pRes.json();
       const allP = pData.products || [];
@@ -110,6 +125,42 @@ export default function VendeurPage() {
     );
   }
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingImg(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      if (res.ok) {
+        const data = await res.json();
+        setImageUrl(data.url);
+        showToast("Image produit chargée avec succès.");
+      } else {
+        const err = await res.json();
+        showToast(err.error || "Erreur lors de l'envoi de l'image.");
+      }
+    } finally {
+      setUploadingImg(false);
+    }
+  };
+
+  const handleUpgradePlan = async (plan: string) => {
+    const res = await fetch("/api/billing", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ plan, paymentMethod: "ORANGE_MONEY" }),
+    });
+    if (res.ok) {
+      showToast(`Abonnement mis à niveau vers le plan ${plan} !`);
+      loadData();
+    } else {
+      const err = await res.json();
+      showToast(err.error || "Erreur lors de la mise à niveau.");
+    }
+  };
+
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     const res = await fetch("/api/products", {
@@ -121,13 +172,18 @@ export default function VendeurPage() {
         priceFcfa: Number(priceFcfa),
         stock: Number(stock),
         categoryId,
+        imageUrl: imageUrl || undefined,
       }),
     });
     if (res.ok) {
       setTitle("");
       setDescription("");
+      setImageUrl("");
       showToast("Produit soumis au contrôle qualité (PENDING_QC) avant publication.");
       loadData();
+    } else {
+      const err = await res.json();
+      showToast(err.error || "Impossible d'ajouter le produit.");
     }
   };
 
@@ -324,6 +380,14 @@ export default function VendeurPage() {
                 </select>
               </div>
               <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Photo du produit (max 2 Mo)</label>
+                <label className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-3 py-3 text-xs font-semibold text-slate-600 hover:bg-slate-100 cursor-pointer">
+                  <Upload className="h-4 w-4 text-[#1E3A5F]" />
+                  <span>{uploadingImg ? "Chargement..." : imageUrl ? "Image prête ✓ (Changer)" : "Choisir une image (.jpg, .png, .webp)"}</span>
+                  <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                </label>
+              </div>
+              <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Description & Garantie</label>
                 <textarea
                   required
@@ -514,6 +578,47 @@ export default function VendeurPage() {
               })}
             </div>
           </div>
+
+          {billing?.store && (
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h2 className="text-base font-extrabold text-[#0B192C] flex items-center gap-2">
+                  <CreditCard className="h-4 w-4 text-orange-500" /> Mon Abonnement SaaS ({billing.store.plan})
+                </h2>
+                <span className="text-xs font-bold text-slate-500">
+                  Quota produits : {billing.productCount} / {billing.maxProducts ?? "Illimité"}
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-2 text-xs">
+                {["STARTER", "PRO", "BUSINESS"].map((planId) => (
+                  <button
+                    key={planId}
+                    type="button"
+                    disabled={billing.store?.plan === planId}
+                    onClick={() => handleUpgradePlan(planId)}
+                    className={`rounded-xl px-3.5 py-2 font-bold transition cursor-pointer ${
+                      billing.store?.plan === planId
+                        ? "bg-emerald-100 text-emerald-800 cursor-default"
+                        : "bg-[#0B192C] text-white hover:bg-[#1E3A5F]"
+                    }`}
+                  >
+                    {billing.store?.plan === planId ? `Plan actif : ${planId}` : `Passer au plan ${planId}`}
+                  </button>
+                ))}
+              </div>
+              {billing.invoices.length > 0 && (
+                <div className="border-t border-slate-100 pt-3 space-y-1 text-xs">
+                  <div className="font-bold text-slate-700">Dernières factures SaaS :</div>
+                  {billing.invoices.slice(0, 3).map((inv) => (
+                    <div key={inv.id} className="flex justify-between text-slate-600">
+                      <span>{inv.invoiceNumber} ({inv.plan})</span>
+                      <span className="font-bold text-[#0B192C]">{formatFcfa(inv.amountFcfa)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

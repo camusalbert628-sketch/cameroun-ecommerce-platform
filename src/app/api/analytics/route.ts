@@ -2,19 +2,22 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
-  const orders = await prisma.order.findMany({
-    include: {
-      items: {
-        include: {
-          product: { include: { category: true } },
+  const [orders, products, pageViews, paidEvents] = await Promise.all([
+    prisma.order.findMany({
+      include: {
+        items: {
+          include: {
+            product: { include: { category: true } },
+          },
         },
       },
-    },
-  });
-
-  const products = await prisma.product.findMany({
-    include: { category: true },
-  });
+    }),
+    prisma.product.findMany({
+      include: { category: true },
+    }),
+    prisma.analyticsEvent.count({ where: { eventType: "PAGE_VIEW" } }),
+    prisma.analyticsEvent.count({ where: { eventType: "ORDER_PAID" } }),
+  ]);
 
   const validOrders = orders.filter((o) => !["CANCELLED", "PAYMENT_FAILED"].includes(o.status));
   const cancelledOrders = orders.filter((o) => o.status === "CANCELLED");
@@ -86,7 +89,7 @@ export async function GET() {
       tauxAnnulation,
       tauxRetour,
       delaiMoyenLivraisonHeures: 28,
-      tauxConversion: 2.8,
+      tauxConversion: pageViews > 0 ? Number(((paidEvents / pageViews) * 100).toFixed(1)) : 2.8,
       tauxFidelisation: 34.5,
       cacFcfa: 4200,
       ltvFcfa: 48500,

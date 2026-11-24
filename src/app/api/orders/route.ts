@@ -82,8 +82,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const isSimulatedFailure =
-      paymentMethod !== "CASH_ON_DELIVERY" && customerPhone.replace(/\s+/g, "").endsWith("0000");
+    const isSimulatedFailure = false;
 
     // Atomic transaction for stock verification + order creation + decrement
     const result = await prisma.$transaction(async (tx) => {
@@ -303,6 +302,23 @@ export async function POST(req: NextRequest) {
         include: {
           items: { include: { product: true } },
           events: true,
+        },
+      });
+
+      await tx.paymentTransaction.create({
+        data: {
+          orderId: order.id,
+          provider: paymentMethod,
+          reference: paymentReference || `COD-${order.orderNumber}`,
+          amountFcfa: totalFcfa,
+          status: paymentStatus === "PAID" ? "SUCCESS" : "PENDING",
+        },
+      });
+
+      await tx.analyticsEvent.create({
+        data: {
+          eventType: "ORDER_PAID",
+          storeId: order.storeId,
         },
       });
 

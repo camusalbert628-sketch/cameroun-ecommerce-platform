@@ -26,6 +26,29 @@ model Store {
   orders        Order[]
   deliveryZones DeliveryZone[]
   subscriptions Subscription[]
+  invoices      BillingInvoice[]
+  analytics     AnalyticsEvent[]
+}
+
+model BillingInvoice {
+  id            String   @id @default(cuid())
+  invoiceNumber String   @unique
+  storeId       String
+  store         Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  plan          String
+  amountFcfa    Int
+  paymentMethod String   // ORANGE_MONEY, MTN_MOMO, CARD_VISA_MC
+  status        String   @default("PAID")
+  createdAt     DateTime @default(now())
+}
+
+model AnalyticsEvent {
+  id        String   @id @default(cuid())
+  storeId   String?
+  store     Store?   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  eventType String   // PAGE_VIEW, ADD_TO_CART, CHECKOUT_STARTED, ORDER_PAID
+  productId String?
+  createdAt DateTime @default(now())
 }
 
 model Subscription {
@@ -164,6 +187,19 @@ model Order {
   items               OrderItem[]
   events              OrderEvent[]
   claims              Claim[]
+  transactions        PaymentTransaction[]
+}
+
+model PaymentTransaction {
+  id         String   @id @default(cuid())
+  orderId    String
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  provider   String   // ORANGE_MONEY, MTN_MOMO, CARD_VISA_MC, CASH_ON_DELIVERY
+  reference  String   @unique
+  amountFcfa Int
+  status     String   @default("PENDING") // PENDING, SUCCESS, FAILED
+  rawPayload String?
+  createdAt  DateTime @default(now())
 }
 
 model OrderItem {
