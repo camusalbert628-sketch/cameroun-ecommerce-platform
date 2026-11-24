@@ -73,6 +73,12 @@ export async function POST(req: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: "Authentification obligatoire." }, { status: 401 });
     }
+    if (user.accountStatus !== "APPROVED") {
+      return NextResponse.json(
+        { error: "Compte non approuvé : un administrateur doit valider votre compte avant toute création de boutique." },
+        { status: 403 }
+      );
+    }
 
     const ip = getClientIp(req.headers);
     const rl = checkRateLimit(`stores:create:${ip}`, 6, 60_000);

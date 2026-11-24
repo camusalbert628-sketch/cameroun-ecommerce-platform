@@ -23,7 +23,8 @@ export interface SessionUser {
   id: string;
   name: string;
   email: string;
-  role: "CLIENT" | "VENDOR" | "LOGISTICS" | "ADMIN" | "EXECUTIVE";
+  role: "CLIENT" | "VENDOR" | "LOGISTICS" | "ADMIN" | "EXECUTIVE" | "SUPER_ADMIN";
+  accountStatus?: "PENDING" | "APPROVED" | "REJECTED";
   title?: string | null;
   city: string;
   quarter?: string | null;

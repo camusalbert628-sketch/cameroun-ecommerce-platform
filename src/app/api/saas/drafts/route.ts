@@ -31,6 +31,12 @@ export async function POST(req: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: "Authentification requise." }, { status: 401 });
     }
+    if (user.accountStatus !== "APPROVED") {
+      return NextResponse.json(
+        { error: "Votre compte est en attente d'approbation par un administrateur avant de pouvoir créer une boutique." },
+        { status: 403 }
+      );
+    }
 
     const body = await req.json();
     const { storeName, customSlug, plan, data } = body as {

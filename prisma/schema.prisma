@@ -173,6 +173,7 @@ model User {
   passwordHash  String
   phone         String?
   role          String         @default("CLIENT") // CLIENT, VENDOR, LOGISTICS, ADMIN, EXECUTIVE, SUPER_ADMIN
+  accountStatus String         @default("APPROVED") // PENDING, APPROVED, REJECTED
   title         String?        // Ex: Directeur Général, Dir. Commercial, etc.
   city          String         @default("Douala")
   quarter       String?

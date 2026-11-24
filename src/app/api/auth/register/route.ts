@@ -46,6 +46,7 @@ export async function POST(req: NextRequest) {
         phone: phone?.trim() || null,
         city: city || "Douala",
         role: "CLIENT",
+        accountStatus: "PENDING",
         loyaltyPoints: 100, // Bonus de bienvenue
       },
     });

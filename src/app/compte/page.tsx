@@ -480,13 +480,24 @@ function CompteContent() {
             <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
               Obtenez votre vitrine dédiée en marque blanche, gérez vos variantes et stocks en temps réel, et encaissez par Orange Money, MTN MoMo et Visa/Mastercard.
             </p>
+            <div className="rounded-xl bg-white/10 p-3 text-xs text-slate-200 space-y-1">
+              <div className="font-bold text-orange-300">Parcours obligatoire :</div>
+              <div>1. Créez votre compte ou connectez-vous</div>
+              <div>2. Approbation de votre compte par un administrateur</div>
+              <div>3. Configuration &amp; paiement de votre boutique SaaS</div>
+            </div>
           </div>
-          <Link
-            href="/inscription-boutique"
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 py-3.5 text-sm font-extrabold text-white hover:bg-orange-600 transition"
+          <button
+            type="button"
+            onClick={() => {
+              setMode("register");
+              setError(null);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 py-3.5 text-sm font-extrabold text-white hover:bg-orange-600 transition cursor-pointer"
           >
-            Ouvrir ma boutique maintenant <ArrowRight className="h-4 w-4" />
-          </Link>
+            Créer un compte pour ouvrir ma boutique <ArrowRight className="h-4 w-4" />
+          </button>
         </div>
       </div>
     );

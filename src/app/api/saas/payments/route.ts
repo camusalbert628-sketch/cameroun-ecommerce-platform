@@ -55,6 +55,12 @@ export async function POST(req: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: "Authentification requise." }, { status: 401 });
     }
+    if (user.accountStatus !== "APPROVED") {
+      return NextResponse.json(
+        { error: "Votre compte doit être approuvé avant de régler une souscription." },
+        { status: 403 }
+      );
+    }
 
     const body = await req.json();
     const { subscriptionId, method, phone, proofUrl } = body as {

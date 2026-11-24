@@ -49,6 +49,7 @@ interface UserRow {
   name: string;
   email: string;
   role: string;
+  accountStatus?: string;
   phone: string | null;
   city: string;
   loyaltyPoints: number;
@@ -678,6 +679,7 @@ export default function SuperAdminPage() {
                 <th className="py-3 pr-4">Ville / Tél</th>
                 <th className="py-3 pr-4">Boutique liée</th>
                 <th className="py-3 pr-4">Points Fidélité</th>
+                <th className="py-3 pr-4">Approbation</th>
                 <th className="py-3 pr-4">Rôle</th>
                 <th className="py-3 text-right">Actions</th>
               </tr>
@@ -715,6 +717,26 @@ export default function SuperAdminPage() {
                     >
                       {u.loyaltyPoints} pts
                     </button>
+                  </td>
+                  <td className="py-3 pr-4">
+                    <Select
+                      size="xs"
+                      value={u.accountStatus || "APPROVED"}
+                      onChange={(v) => patchEntity({ userId: u.id, accountStatus: v }, `Compte ${u.name} → ${v}`)}
+                      className="w-28"
+                      buttonClassName={`font-bold ${
+                        u.accountStatus === "PENDING"
+                          ? "text-amber-700 bg-amber-50 border-amber-200"
+                          : u.accountStatus === "REJECTED"
+                          ? "text-red-700 bg-red-50 border-red-200"
+                          : "text-emerald-700 bg-emerald-50 border-emerald-200"
+                      }`}
+                      options={[
+                        { value: "APPROVED", label: "APPROVED" },
+                        { value: "PENDING", label: "PENDING" },
+                        { value: "REJECTED", label: "REJECTED" },
+                      ]}
+                    />
                   </td>
                   <td className="py-3 pr-4">
                     <Select

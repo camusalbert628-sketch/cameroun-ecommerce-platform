@@ -446,6 +446,41 @@ export default function InscriptionBoutiquePage() {
     }
   };
 
+  if (user && user.accountStatus && user.accountStatus !== "APPROVED") {
+    return (
+      <div className="mx-auto max-w-xl px-4 py-16">
+        <div className="rounded-3xl border border-amber-200 bg-white p-8 shadow-sm text-center space-y-5">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100 text-amber-600">
+            <Lock className="h-7 w-7" />
+          </div>
+          <span className="inline-block rounded-full bg-amber-50 px-3 py-1 text-xs font-extrabold text-amber-800">
+            Statut du compte : {user.accountStatus === "REJECTED" ? "Refusé" : "En attente d'approbation"}
+          </span>
+          <h1 className="text-2xl font-extrabold text-[#0B192C]">
+            Approbation de compte requise
+          </h1>
+          <p className="text-sm text-slate-600 leading-relaxed">
+            Vous ne pouvez pas encore ouvrir de boutique SaaS tant que votre compte (<strong>{user.email}</strong>) n&apos;a pas été approuvé par un administrateur COMMERCIA.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+            <Link
+              href="/compte"
+              className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-xs font-bold text-slate-700 hover:bg-slate-50"
+            >
+              Mon compte
+            </Link>
+            <Link
+              href="/"
+              className="rounded-xl bg-[#0B192C] px-5 py-3 text-xs font-bold text-white hover:bg-[#1E3A5F]"
+            >
+              Retour à la boutique
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (createdStore) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-16">

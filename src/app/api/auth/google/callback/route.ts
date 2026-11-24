@@ -94,6 +94,7 @@ export async function GET(req: NextRequest) {
             email: normalizedEmail,
             passwordHash: randomHash,
             role: "CLIENT",
+            accountStatus: "PENDING",
             loyaltyPoints: 100,
           },
         });

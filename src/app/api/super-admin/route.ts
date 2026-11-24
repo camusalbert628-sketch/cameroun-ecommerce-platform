@@ -50,6 +50,7 @@ export async function GET() {
         name: true,
         email: true,
         role: true,
+        accountStatus: true,
         phone: true,
         city: true,
         loyaltyPoints: true,
@@ -391,6 +392,9 @@ export async function PATCH(req: NextRequest) {
     const allowedRoles = ["CLIENT", "VENDOR", "LOGISTICS", "ADMIN", "EXECUTIVE", "SUPER_ADMIN"];
     const data: Record<string, unknown> = {};
     if (body.role && allowedRoles.includes(body.role)) data.role = body.role;
+    if (body.accountStatus && ["PENDING", "APPROVED", "REJECTED"].includes(body.accountStatus)) {
+      data.accountStatus = body.accountStatus;
+    }
     if (body.assignStoreId !== undefined) data.storeId = body.assignStoreId || null;
     if (typeof body.loyaltyPoints === "number") data.loyaltyPoints = Math.max(0, Math.round(body.loyaltyPoints));
     if (body.newPassword && String(body.newPassword).length >= 6) {
@@ -400,8 +404,20 @@ export async function PATCH(req: NextRequest) {
     const updatedUser = await prisma.user.update({
       where: { id: body.userId },
       data,
-      select: { id: true, name: true, email: true, role: true, storeId: true, loyaltyPoints: true },
+      select: { id: true, name: true, email: true, role: true, accountStatus: true, storeId: true, loyaltyPoints: true },
     });
+    if (body.accountStatus) {
+      await prisma.auditLog.create({
+        data: {
+          actorId: user.id,
+          actorRole: user.role,
+          action: `USER_ACCOUNT_${body.accountStatus}`,
+          targetType: "User",
+          targetId: updatedUser.id,
+          details: `Statut du compte ${updatedUser.email} → ${body.accountStatus}`,
+        },
+      });
+    }
     return NextResponse.json({ user: updatedUser });
   }
 

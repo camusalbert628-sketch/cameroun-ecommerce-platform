@@ -63,6 +63,12 @@ export async function POST(req: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: "Authentification requise." }, { status: 401 });
     }
+    if (user.accountStatus !== "APPROVED") {
+      return NextResponse.json(
+        { error: "Votre compte doit être approuvé par un administrateur avant de souscrire." },
+        { status: 403 }
+      );
+    }
 
     const body = await req.json();
     const { draftId, activateIfFree } = body as { draftId?: string; activateIfFree?: boolean };
