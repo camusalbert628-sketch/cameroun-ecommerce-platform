@@ -1,9 +1,19 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/auth";
 
 export async function GET() {
+  const user = await getCurrentUser();
+  if (!user || !["ADMIN", "EXECUTIVE", "SUPER_ADMIN", "VENDOR"].includes(user.role)) {
+    return NextResponse.json({ error: "Accès réservé à la direction et aux marchands." }, { status: 403 });
+  }
+
+  const orderWhere = user.role === "VENDOR" && user.storeId ? { storeId: user.storeId } : {};
+  const productWhere = user.role === "VENDOR" && user.storeId ? { storeId: user.storeId } : {};
+
   const [orders, products, pageViews, addToCarts, paidEvents] = await Promise.all([
     prisma.order.findMany({
+      where: orderWhere,
       include: {
         items: {
           include: {
@@ -13,6 +23,7 @@ export async function GET() {
       },
     }),
     prisma.product.findMany({
+      where: productWhere,
       include: { category: true },
     }),
     prisma.analyticsEvent.count({ where: { eventType: "PAGE_VIEW" } }),

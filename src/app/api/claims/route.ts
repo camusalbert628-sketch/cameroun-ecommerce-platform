@@ -3,7 +3,20 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 
 export async function GET() {
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json({ error: "Authentification requise." }, { status: 401 });
+  }
+
+  const isStaff = ["ADMIN", "LOGISTICS", "EXECUTIVE", "SUPER_ADMIN"].includes(user.role);
+  const where = isStaff
+    ? {}
+    : user.role === "VENDOR" && user.storeId
+    ? { order: { storeId: user.storeId } }
+    : { userId: user.id };
+
   const claims = await prisma.claim.findMany({
+    where,
     include: {
       order: { select: { orderNumber: true, customerName: true, totalFcfa: true, city: true } },
     },

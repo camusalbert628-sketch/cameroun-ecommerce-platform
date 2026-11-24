@@ -17,20 +17,28 @@ export async function GET(req: NextRequest) {
   const vendorId = searchParams.get("vendorId");
   const mine = searchParams.get("mine") === "true";
 
+  const user = await getCurrentUser();
+  const isStaff = Boolean(user && ["ADMIN", "LOGISTICS", "EXECUTIVE", "SUPER_ADMIN"].includes(user.role));
+
   const where: Record<string, unknown> = {};
   if (orderNumber) {
     where.orderNumber = orderNumber.trim().toUpperCase();
+  } else if (mine) {
+    if (!user) return NextResponse.json({ orders: [] });
+    where.userId = user.id;
+  } else if (user?.role === "VENDOR") {
+    if (user.storeId) where.storeId = user.storeId;
+    else if (user.vendorProfile?.id) where.items = { some: { vendorId: user.vendorProfile.id } };
+    else return NextResponse.json({ orders: [] });
+  } else if (!isStaff) {
+    return NextResponse.json({ error: "Authentification requise." }, { status: 403 });
   }
+
   if (status && status !== "all") {
     where.status = status;
   }
-  if (vendorId) {
+  if (vendorId && isStaff) {
     where.items = { some: { vendorId } };
-  }
-  if (mine) {
-    const user = await getCurrentUser();
-    if (!user) return NextResponse.json({ orders: [] });
-    where.userId = user.id;
   }
 
   const orders = await prisma.order.findMany({
@@ -43,7 +51,19 @@ export async function GET(req: NextRequest) {
     orderBy: { createdAt: "desc" },
   });
 
-  return NextResponse.json({ orders });
+  // Mask PII for public single-order tracking lookups by anonymous users
+  const sanitized = orders.map((o) => {
+    const canSeeFull = isStaff || (user && (o.userId === user.id || (user.storeId && o.storeId === user.storeId)));
+    if (canSeeFull) return o;
+    return {
+      ...o,
+      customerPhone: o.customerPhone.length > 4 ? `${o.customerPhone.slice(0, 3)}****${o.customerPhone.slice(-2)}` : "****",
+      customerEmail: null,
+      deliveryAddress: "Adresse masquée (connectez-vous pour voir les détails)",
+    };
+  });
+
+  return NextResponse.json({ orders: sanitized });
 }
 
 export async function POST(req: NextRequest) {
@@ -93,6 +113,7 @@ export async function POST(req: NextRequest) {
       let commissionTotalFcfa = 0;
       let hasOnOrder = false;
       const outOfStockAlerts: string[] = [];
+      const orderedStoreIds: (string | null)[] = [];
 
       const orderItemsData: {
         productId: string;
@@ -119,6 +140,7 @@ export async function POST(req: NextRequest) {
         if (!prod) {
           throw new StockValidationError("Un des produits sélectionnés est introuvable.");
         }
+        orderedStoreIds.push(prod.storeId);
         if (prod.salesModel === "ON_ORDER") hasOnOrder = true;
 
         let unitPriceFcfa = prod.priceFcfa;
@@ -247,6 +269,7 @@ export async function POST(req: NextRequest) {
         const isCouponValid =
           coupon &&
           coupon.active &&
+          (!coupon.storeId || orderedStoreIds.every((id) => id === coupon.storeId)) &&
           (!coupon.expiresAt || coupon.expiresAt > new Date()) &&
           (coupon.maxUses === null || coupon.usedCount < coupon.maxUses) &&
           subtotalFcfa >= coupon.minOrderFcfa;
@@ -277,6 +300,10 @@ export async function POST(req: NextRequest) {
         paymentStatus = "FAILED";
         status = "PAYMENT_FAILED";
         paymentReference = `ERR-${Date.now().toString().slice(-6)}`;
+      } else if (process.env.NOTCHPAY_PUBLIC_KEY || (process.env.CINETPAY_API_KEY && process.env.CINETPAY_SITE_ID)) {
+        paymentStatus = "PENDING";
+        status = "PENDING_PAYMENT";
+        paymentReference = `PAY-${Date.now().toString().slice(-8)}`;
       } else {
         paymentStatus = "PAID";
         status = "CONFIRMED";

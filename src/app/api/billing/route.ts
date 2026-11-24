@@ -40,7 +40,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const user = await getCurrentUser();
-    if (!user || !user.storeId) {
+    if (!user || !user.storeId || !["VENDOR", "ADMIN", "EXECUTIVE", "SUPER_ADMIN"].includes(user.role)) {
       return NextResponse.json({ error: "Authentification boutique requise." }, { status: 403 });
     }
 
@@ -52,6 +52,15 @@ export async function POST(req: NextRequest) {
     }
 
     const cfg = PLAN_CONFIG[plan];
+    const hasLiveGateway = Boolean(
+      process.env.NOTCHPAY_PUBLIC_KEY || (process.env.CINETPAY_API_KEY && process.env.CINETPAY_SITE_ID)
+    );
+    if (cfg.priceFcfa > 0 && hasLiveGateway && !["ADMIN", "EXECUTIVE", "SUPER_ADMIN"].includes(user.role)) {
+      return NextResponse.json(
+        { error: "Veuillez finaliser le paiement via la passerelle avant l'activation du plan." },
+        { status: 402 }
+      );
+    }
     const nextMonth = new Date();
     nextMonth.setDate(nextMonth.getDate() + 30);
     const invoiceNumber = `INV-SAAS-${Date.now().toString().slice(-7)}`;

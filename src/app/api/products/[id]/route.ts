@@ -8,7 +8,7 @@ export async function PATCH(
 ) {
   try {
     const user = await getCurrentUser();
-    if (!user || !["ADMIN", "VENDOR", "LOGISTICS", "EXECUTIVE"].includes(user.role)) {
+    if (!user || !["ADMIN", "VENDOR", "LOGISTICS", "EXECUTIVE", "SUPER_ADMIN"].includes(user.role)) {
       return NextResponse.json({ error: "Non autorisé." }, { status: 403 });
     }
 
@@ -20,8 +20,17 @@ export async function PATCH(
       return NextResponse.json({ error: "Produit introuvable." }, { status: 404 });
     }
 
+    if (user.role === "VENDOR") {
+      const ownsProduct =
+        (user.storeId && existing.storeId === user.storeId) ||
+        (user.vendorProfile?.id && existing.vendorId === user.vendorProfile.id);
+      if (!ownsProduct) {
+        return NextResponse.json({ error: "Ce produit n'appartient pas à votre boutique." }, { status: 403 });
+      }
+    }
+
     const data: Record<string, unknown> = {};
-    if (body.qualityStatus && (user.role === "ADMIN" || user.role === "EXECUTIVE")) {
+    if (body.qualityStatus && ["ADMIN", "EXECUTIVE", "SUPER_ADMIN"].includes(user.role)) {
       data.qualityStatus = body.qualityStatus;
     }
     if (typeof body.addStock === "number" && body.addStock > 0) {
@@ -32,7 +41,7 @@ export async function PATCH(
     if (typeof body.priceFcfa === "number" && body.priceFcfa > 0) {
       data.priceFcfa = Math.round(body.priceFcfa);
     }
-    if (typeof body.isFeatured === "boolean" && user.role === "ADMIN") {
+    if (typeof body.isFeatured === "boolean" && ["ADMIN", "SUPER_ADMIN"].includes(user.role)) {
       data.isFeatured = body.isFeatured;
     }
 

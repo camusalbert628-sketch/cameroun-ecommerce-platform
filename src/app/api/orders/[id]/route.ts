@@ -9,11 +9,28 @@ export async function PATCH(
 ) {
   try {
     const user = await getCurrentUser();
-    if (!user || !["ADMIN", "LOGISTICS", "VENDOR", "CLIENT"].includes(user.role)) {
+    if (!user || !["ADMIN", "LOGISTICS", "VENDOR", "EXECUTIVE", "SUPER_ADMIN"].includes(user.role)) {
       return NextResponse.json({ error: "Non autorisé." }, { status: 403 });
     }
 
     const { id } = await context.params;
+    const existing = await prisma.order.findUnique({
+      where: { id },
+      include: { items: true },
+    });
+    if (!existing) {
+      return NextResponse.json({ error: "Commande introuvable." }, { status: 404 });
+    }
+
+    if (user.role === "VENDOR") {
+      const ownsOrder =
+        (user.storeId && existing.storeId === user.storeId) ||
+        (user.vendorProfile?.id && existing.items.some((i) => i.vendorId === user.vendorProfile!.id));
+      if (!ownsOrder) {
+        return NextResponse.json({ error: "Cette commande n'appartient pas à votre boutique." }, { status: 403 });
+      }
+    }
+
     const body = await req.json();
     const { status, assignedCourier, qcCheckedBy, trackingNotes, paymentStatus, eventLabel, eventDescription } = body;
 
@@ -22,7 +39,9 @@ export async function PATCH(
     if (assignedCourier !== undefined) data.assignedCourier = assignedCourier;
     if (qcCheckedBy !== undefined) data.qcCheckedBy = qcCheckedBy;
     if (trackingNotes !== undefined) data.trackingNotes = trackingNotes;
-    if (paymentStatus) data.paymentStatus = paymentStatus;
+    if (paymentStatus && ["ADMIN", "EXECUTIVE", "SUPER_ADMIN"].includes(user.role)) {
+      data.paymentStatus = paymentStatus;
+    }
 
     const order = await prisma.order.update({
       where: { id },
