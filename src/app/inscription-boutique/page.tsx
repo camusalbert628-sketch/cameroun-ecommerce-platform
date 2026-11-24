@@ -145,6 +145,7 @@ export default function InscriptionBoutiquePage() {
   const { user, showToast } = useApp();
   const [draft, setDraft] = useState<OnboardingDraft>(createDefaultDraft);
   const [hydrated, setHydrated] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
   const [savedAt, setSavedAt] = useState<string | null>(null);
 
   const [slugStatus, setSlugStatus] = useState<"idle" | "checking" | "available" | "taken">("idle");
@@ -165,6 +166,19 @@ export default function InscriptionBoutiquePage() {
   } | null>(null);
 
   useEffect(() => {
+    fetch("/api/auth")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!d?.user) {
+          router.replace("/compte?redirect=/inscription-boutique");
+          return;
+        }
+        setAuthChecked(true);
+      })
+      .catch(() => {
+        router.replace("/compte?redirect=/inscription-boutique");
+      });
+
     try {
       const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
       if (raw) {
@@ -445,6 +459,14 @@ export default function InscriptionBoutiquePage() {
       setSubmitting(false);
     }
   };
+
+  if (!authChecked) {
+    return (
+      <div className="mx-auto max-w-md px-4 py-24 text-center text-sm text-slate-500">
+        Vérification de votre session...
+      </div>
+    );
+  }
 
   if (user && user.accountStatus && user.accountStatus !== "APPROVED") {
     return (
