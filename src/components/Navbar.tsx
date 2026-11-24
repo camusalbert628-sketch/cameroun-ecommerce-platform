@@ -139,10 +139,16 @@ export function Navbar() {
                 </Link>
               )}
               <Link
+                href="/saas"
+                className="font-semibold text-slate-200 hover:text-white transition"
+              >
+                Services SaaS
+              </Link>
+              <Link
                 href="/inscription-boutique"
                 className="font-bold text-orange-400 hover:text-orange-300 transition"
               >
-                + Ouvrir ma boutique SaaS
+                + Ouvrir ma boutique
               </Link>
             </div>
           </div>

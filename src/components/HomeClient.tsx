@@ -71,10 +71,21 @@ const TABS = [
   { id: "energy", label: "Énergie, Auto & Pro", slugs: ["electromenager", "automobile-accessoires", "equipements-industriels"] },
 ];
 
+export interface StoreBrandConfig {
+  name: string;
+  slug: string;
+  tagline?: string | null;
+  primaryColor: string;
+  accentColor: string;
+  logoUrl?: string | null;
+}
+
 export function HomeClient({
   products,
+  storeConfig,
 }: {
   products: ProductCardData[];
+  storeConfig?: StoreBrandConfig;
 }) {
   const { user, deliveryCity, compareIds, toggleCompare, addToCart, recentlyViewedIds } = useApp();
   const [slideIdx, setSlideIdx] = useState(0);
@@ -103,14 +114,23 @@ export function HomeClient({
   const slide = HERO_SLIDES[slideIdx];
   const flashDeals = products.filter((p) => p.compareAtFcfa && p.compareAtFcfa > p.priceFcfa).slice(0, 6);
 
-  const techQuad = products.filter((p) =>
+  const techQuad = (products.filter((p) =>
     ["telephones-accessoires", "electronique-informatique"].includes(p.category.slug)
+  ).length > 0
+    ? products.filter((p) => ["telephones-accessoires", "electronique-informatique"].includes(p.category.slug))
+    : products
   ).slice(0, 4);
-  const terroirQuad = products.filter((p) =>
+  const terroirQuad = (products.filter((p) =>
     ["alimentation-produits-locaux", "beaute-cosmetique"].includes(p.category.slug)
+  ).length > 0
+    ? products.filter((p) => ["alimentation-produits-locaux", "beaute-cosmetique"].includes(p.category.slug))
+    : products
   ).slice(0, 4);
-  const homeQuad = products.filter((p) =>
+  const homeQuad = (products.filter((p) =>
     ["maison-decoration", "mode-habillement", "electromenager", "chaussures-maroquinerie"].includes(p.category.slug)
+  ).length > 0
+    ? products.filter((p) => ["maison-decoration", "mode-habillement", "electromenager", "chaussures-maroquinerie"].includes(p.category.slug))
+    : products
   ).slice(0, 4);
 
   const filteredByTab =
@@ -129,19 +149,26 @@ export function HomeClient({
   return (
     <div className="bg-slate-100 pb-12">
       {/* 1. Amazon-Style Hero Carousel with Real Product Visuals */}
-      <section className={`relative overflow-hidden bg-gradient-to-br ${slide.bg} text-white pb-24 pt-10 sm:pt-12 transition-colors duration-500`}>
+      <section
+        className={`relative overflow-hidden bg-gradient-to-br ${slide.bg} text-white pb-24 pt-10 sm:pt-12 transition-colors duration-500`}
+        style={
+          storeConfig
+            ? { background: `linear-gradient(135deg, ${storeConfig.primaryColor} 0%, #1E3A5F 100%)` }
+            : undefined
+        }
+      >
         <div className="mx-auto max-w-[1680px] px-4 relative z-10">
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:items-center">
             <div className="lg:col-span-7 space-y-4">
               <span className={`inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-bold ${slide.accent}`}>
                 <Sparkles className="h-3.5 w-3.5" />
-                {slide.badge}
+                {storeConfig ? `Boutique Officielle · ${storeConfig.name}` : slide.badge}
               </span>
               <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight leading-tight">
-                {slide.title}
+                {storeConfig ? storeConfig.name : slide.title}
               </h1>
               <p className="text-sm sm:text-base text-slate-200 leading-relaxed max-w-xl">
-                {slide.subtitle}
+                {storeConfig?.tagline || slide.subtitle}
               </p>
               <div className="flex flex-wrap items-center gap-3 pt-2">
                 <Link
@@ -300,6 +327,7 @@ export function HomeClient({
       </section>
 
       {/* 3. Ventes Flash Horizontal Carousel */}
+      {flashDeals.length > 0 && (
       <section className="mx-auto max-w-[1680px] px-4 mt-8">
         <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
@@ -387,6 +415,7 @@ export function HomeClient({
           </div>
         </div>
       </section>
+      )}
 
       {/* 4. Dense Amazon-Style Product Grid with Category Tabs */}
       <section className="mx-auto max-w-[1680px] px-4 mt-8">
@@ -452,36 +481,38 @@ export function HomeClient({
         </section>
       )}
 
-      {/* 5. 5 Interfaces Banner */}
-      <section className="mx-auto max-w-[1680px] px-4 mt-10">
-        <div className="rounded-3xl bg-gradient-to-r from-[#0B192C] to-[#1E3A5F] p-7 sm:p-9 text-white shadow-xl flex flex-col lg:flex-row items-center justify-between gap-6">
-          <div className="space-y-2 max-w-2xl">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-orange-400">
-              Architecture Complète (Chapitre 13 & 25)
-            </span>
-            <h2 className="text-2xl font-extrabold">
-              Pilotez la Marketplace, la Logistique et les 4 Associés en temps réel
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-300">
-              Basculez à tout moment sur les interfaces Vendeur Partenaire, Gestionnaire Logistique (13 étapes), Administrateur QC ou Tableau de Bord de Direction.
-            </p>
+      {/* 5. Albedo'o SaaS Banner ("Lancez votre propre boutique avec le même rendu qu'Albedo'o") */}
+      {!storeConfig && (
+        <section className="mx-auto max-w-[1680px] px-4 mt-10">
+          <div className="rounded-3xl bg-gradient-to-r from-[#0B192C] to-[#1E3A5F] p-7 sm:p-9 text-white shadow-xl flex flex-col lg:flex-row items-center justify-between gap-6">
+            <div className="space-y-2 max-w-2xl">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-orange-400">
+                Services SaaS Albedo&apos;o
+              </span>
+              <h2 className="text-2xl font-extrabold">
+                Vous voulez votre propre boutique en ligne avec le même rendu qu&apos;Albedo&apos;o ?
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-300">
+                Créez votre boutique en 2 minutes : même vitrine Amazon-grade, gestion des variantes &amp; stocks, paiements Orange Money / MTN MoMo et factures OHADA incluses.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3 shrink-0">
+              <Link
+                href="/saas"
+                className="inline-flex items-center gap-2 rounded-xl bg-white/10 px-5 py-3 text-xs font-extrabold text-white hover:bg-white/20 transition"
+              >
+                <LayoutDashboard className="h-4 w-4" /> Découvrir l&apos;offre SaaS
+              </Link>
+              <Link
+                href="/inscription-boutique"
+                className="inline-flex items-center gap-2 rounded-xl bg-orange-500 px-5 py-3 text-xs font-extrabold text-white hover:bg-orange-600 transition"
+              >
+                <Store className="h-4 w-4" /> Créer ma boutique maintenant
+              </Link>
+            </div>
           </div>
-          <div className="flex flex-wrap gap-3 shrink-0">
-            <Link
-              href="/direction"
-              className="inline-flex items-center gap-2 rounded-xl bg-orange-500 px-5 py-3 text-xs font-extrabold text-white hover:bg-orange-600 transition"
-            >
-              <LayoutDashboard className="h-4 w-4" /> Direction (KPIs)
-            </Link>
-            <Link
-              href="/vendeur"
-              className="inline-flex items-center gap-2 rounded-xl bg-white/10 px-5 py-3 text-xs font-extrabold text-white hover:bg-white/20 transition"
-            >
-              <Store className="h-4 w-4" /> Portail Vendeur
-            </Link>
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Floating Product Comparator Bar */}
       {compareIds.length > 0 && (
