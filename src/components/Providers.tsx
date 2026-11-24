@@ -29,6 +29,8 @@ export interface SessionUser {
   quarter?: string | null;
   phone?: string | null;
   loyaltyPoints: number;
+  storeId?: string | null;
+  store?: { id: string; name: string; slug: string; plan: string } | null;
   vendorProfile?: {
     id: string;
     companyName: string;
@@ -57,9 +59,7 @@ interface AppContextType {
   recentlyViewedIds: string[];
   addRecentlyViewed: (productId: string) => void;
   user: SessionUser | null;
-  demoUsers: SessionUser[];
   refreshAuth: () => Promise<void>;
-  switchDemoUser: (email: string) => Promise<void>;
   logout: () => Promise<void>;
   toast: string | null;
   showToast: (msg: string) => void;
@@ -75,7 +75,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [recentlyViewedIds, setRecentlyViewedIds] = useState<string[]>([]);
   const [user, setUser] = useState<SessionUser | null>(null);
-  const [demoUsers, setDemoUsers] = useState<SessionUser[]>([]);
   const [toast, setToast] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -160,23 +159,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
       if (res.ok) {
         const data = await res.json();
         setUser(data.user);
-        setDemoUsers(data.demoUsers || []);
       }
     } catch {
       // ignore
-    }
-  };
-
-  const switchDemoUser = async (email: string) => {
-    const res = await fetch("/api/auth", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, quickSwitch: true }),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      setUser(data.user);
-      showToast(`Profil actif : ${data.user.name} (${data.user.role})`);
     }
   };
 
@@ -279,9 +264,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         recentlyViewedIds,
         addRecentlyViewed,
         user,
-        demoUsers,
         refreshAuth,
-        switchDemoUser,
         logout,
         toast,
         showToast,

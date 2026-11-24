@@ -37,7 +37,7 @@ const LOGISTICS_STEPS = [
 ];
 
 export default function LogistiquePage() {
-  const { user, switchDemoUser, showToast } = useApp();
+  const { user, showToast } = useApp();
   const [orders, setOrders] = useState<LogisticsOrder[]>([]);
   const [courierInput, setCourierInput] = useState<Record<string, string>>({});
 
@@ -66,12 +66,12 @@ export default function LogistiquePage() {
         <p className="text-sm text-slate-600">
           Activez le profil Gestionnaire Logistique pour piloter la réception, le contrôle qualité, l&apos;emballage et les expéditions.
         </p>
-        <button
-          onClick={() => switchDemoUser("logistique@exemple.cm")}
-          className="rounded-xl bg-orange-500 px-6 py-3 text-sm font-bold text-white hover:bg-orange-600 cursor-pointer"
+        <a
+          href="/compte?redirect=/logistique"
+          className="inline-block rounded-xl bg-orange-500 px-6 py-3 text-sm font-bold text-white hover:bg-orange-600"
         >
-          Activer : Samuel Fotso (Hub Akwa Douala)
-        </button>
+          Se connecter (Gestionnaire Logistique)
+        </a>
       </div>
     );
   }

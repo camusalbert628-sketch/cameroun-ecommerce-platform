@@ -17,9 +17,53 @@ async function main() {
   await prisma.category.deleteMany();
   await prisma.vendorProfile.deleteMany();
   await prisma.deliveryZone.deleteMany();
+  await prisma.subscription.deleteMany();
   await prisma.user.deleteMany();
+  await prisma.store.deleteMany();
 
   const passwordHash = await bcrypt.hash("Demo2026!", 10);
+
+  // 0. SaaS Tenant Stores
+  const albedooStore = await prisma.store.create({
+    data: {
+      name: "Albedo'o",
+      slug: "albedoo",
+      tagline: "La valeur en mouvement. — Marketplace & Retail Cameroun",
+      logoUrl: "/logo-albedoo.png",
+      primaryColor: "#0B192C",
+      accentColor: "#F97316",
+      plan: "BUSINESS",
+      status: "ACTIVE",
+      city: "Douala",
+      rccm: "RC/DLA/2026/B/0001",
+      niu: "M012600000001A",
+    },
+  });
+
+  const kamertechStore = await prisma.store.create({
+    data: {
+      name: "KamerTech Distribution",
+      slug: "kamertech",
+      tagline: "Matériel informatique professionnel & protection électrique au Cameroun",
+      primaryColor: "#0F172A",
+      accentColor: "#10B981",
+      plan: "PRO",
+      status: "ACTIVE",
+      city: "Douala",
+      rccm: "RC/DLA/2023/B/1842",
+      niu: "M032314589012K",
+    },
+  });
+
+  const nextMonth = new Date();
+  nextMonth.setDate(nextMonth.getDate() + 30);
+
+  await prisma.subscription.createMany({
+    data: [
+      { storeId: albedooStore.id, plan: "BUSINESS", priceFcfa: 45000, status: "ACTIVE", currentPeriodEnd: nextMonth },
+      { storeId: kamertechStore.id, plan: "PRO", priceFcfa: 15000, status: "ACTIVE", currentPeriodEnd: nextMonth },
+    ],
+  });
 
   // 1. Users
   const clientUser = await prisma.user.create({
@@ -44,6 +88,7 @@ async function main() {
       role: "VENDOR",
       city: "Douala",
       quarter: "Akwa",
+      storeId: kamertechStore.id,
     },
   });
 
@@ -602,7 +647,12 @@ async function main() {
 
   const createdProducts: Record<string, { id: string; priceFcfa: number; costPriceFcfa: number; vendorId: string | null }> = {};
   for (const p of productsData) {
-    const prod = await prisma.product.create({ data: p });
+    const prod = await prisma.product.create({
+      data: {
+        ...p,
+        storeId: p.vendorId === vendorTech.id ? kamertechStore.id : albedooStore.id,
+      },
+    });
     createdProducts[p.sku] = {
       id: prod.id,
       priceFcfa: prod.priceFcfa,

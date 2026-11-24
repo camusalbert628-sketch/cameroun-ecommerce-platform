@@ -5,19 +5,6 @@ import { clearSessionCookie, getCurrentUser, setSessionCookie } from "@/lib/auth
 
 export async function GET() {
   const user = await getCurrentUser();
-  const demoUsers = await prisma.user.findMany({
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      role: true,
-      title: true,
-      city: true,
-      loyaltyPoints: true,
-      vendorProfile: { select: { id: true, companyName: true, commissionRate: true } },
-    },
-    orderBy: { createdAt: "asc" },
-  });
 
   return NextResponse.json({
     user: user
@@ -31,46 +18,43 @@ export async function GET() {
           quarter: user.quarter,
           phone: user.phone,
           loyaltyPoints: user.loyaltyPoints,
+          storeId: user.storeId,
+          store: user.store
+            ? { id: user.store.id, name: user.store.name, slug: user.store.slug, plan: user.store.plan }
+            : null,
           vendorProfile: user.vendorProfile,
         }
       : null,
-    demoUsers,
   });
 }
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { email, password, quickSwitch } = body as {
+    const { email, password } = body as {
       email?: string;
       password?: string;
-      quickSwitch?: boolean;
     };
 
-    if (!email) {
-      return NextResponse.json({ error: "Email requis." }, { status: 400 });
+    if (!email || !password) {
+      return NextResponse.json({ error: "Email et mot de passe requis." }, { status: 400 });
     }
 
     const user = await prisma.user.findUnique({
-      where: { email },
-      include: { vendorProfile: true },
+      where: { email: email.trim().toLowerCase() },
+      include: { vendorProfile: true, store: true },
     });
 
     if (!user) {
-      return NextResponse.json({ error: "Compte introuvable." }, { status: 404 });
+      return NextResponse.json({ error: "Identifiants invalides." }, { status: 401 });
     }
 
-    if (!quickSwitch) {
-      if (!password) {
-        return NextResponse.json({ error: "Mot de passe requis." }, { status: 400 });
-      }
-      const valid = await bcrypt.compare(password, user.passwordHash);
-      if (!valid) {
-        return NextResponse.json({ error: "Mot de passe incorrect." }, { status: 401 });
-      }
+    const valid = await bcrypt.compare(password, user.passwordHash);
+    if (!valid) {
+      return NextResponse.json({ error: "Identifiants invalides." }, { status: 401 });
     }
 
-    await setSessionCookie(user.id);
+    await setSessionCookie(user.id, user.role, user.storeId);
 
     return NextResponse.json({
       user: {
@@ -81,6 +65,10 @@ export async function POST(req: NextRequest) {
         title: user.title,
         city: user.city,
         loyaltyPoints: user.loyaltyPoints,
+        storeId: user.storeId,
+        store: user.store
+          ? { id: user.store.id, name: user.store.name, slug: user.store.slug, plan: user.store.plan }
+          : null,
         vendorProfile: user.vendorProfile,
       },
     });
@@ -94,4 +82,3 @@ export async function DELETE() {
   await clearSessionCookie();
   return NextResponse.json({ ok: true });
 }
-

@@ -11,7 +11,6 @@ import {
   Layers,
   Info,
 } from "lucide-react";
-import { useApp } from "@/components/Providers";
 import { formatFcfa } from "@/lib/format";
 
 interface AnalyticsData {
@@ -44,7 +43,6 @@ interface AnalyticsData {
 }
 
 export default function DirectionPage() {
-  const { user, switchDemoUser } = useApp();
   const [data, setData] = useState<AnalyticsData | null>(null);
 
   useEffect(() => {
@@ -77,15 +75,6 @@ export default function DirectionPage() {
             Pilotage hebdomadaire et mensuel en FCFA · Distinction stricte GMV / Chiffre d&apos;affaires / Marge brute / Bénéfice net.
           </p>
         </div>
-
-        {user?.role !== "EXECUTIVE" && (
-          <button
-            onClick={() => switchDemoUser("dg@exemple.cm")}
-            className="rounded-xl bg-orange-500 px-4 py-2.5 text-xs font-bold text-white hover:bg-orange-600 cursor-pointer"
-          >
-            Activer Profil Directeur Général
-          </button>
-        )}
       </div>
 
       {/* 4 Associates Governance Bar (Chapitre 7) */}

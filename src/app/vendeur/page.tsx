@@ -28,7 +28,7 @@ interface VendorOrder {
 }
 
 export default function VendeurPage() {
-  const { user, switchDemoUser, showToast } = useApp();
+  const { user, showToast } = useApp();
   const [products, setProducts] = useState<VendorProduct[]>([]);
   const [orders, setOrders] = useState<VendorOrder[]>([]);
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
@@ -90,21 +90,21 @@ export default function VendeurPage() {
         </div>
         <h1 className="text-2xl font-extrabold text-[#0B192C]">Interface Vendeur Partenaire (Chap. 13.C)</h1>
         <p className="text-sm text-slate-600">
-          Vous êtes actuellement connecté en tant que <strong>{user ? user.role : "Visiteur"}</strong>. Activez un compte Vendeur Partenaire pour gérer vos produits, stocks et commissions.
+          Connectez-vous avec un compte Vendeur Partenaire ou créez votre boutique SaaS pour gérer vos produits, variantes et stocks.
         </p>
         <div className="flex flex-wrap justify-center gap-3 pt-2">
-          <button
-            onClick={() => switchDemoUser("vendeur.tech@exemple.cm")}
-            className="rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white hover:bg-emerald-700 cursor-pointer"
+          <a
+            href="/compte?redirect=/vendeur"
+            className="rounded-xl bg-[#0B192C] px-5 py-3 text-sm font-bold text-white hover:bg-[#1E3A5F]"
           >
-            Activer : KamerTech Distribution (Douala)
-          </button>
-          <button
-            onClick={() => switchDemoUser("vendeur.beaute@exemple.cm")}
-            className="rounded-xl bg-[#0B192C] px-5 py-3 text-sm font-bold text-white hover:bg-[#1E3A5F] cursor-pointer"
+            Se connecter
+          </a>
+          <a
+            href="/inscription-boutique"
+            className="rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white hover:bg-emerald-700"
           >
-            Activer : Éclat Naturel (Yaoundé)
-          </button>
+            Créer ma boutique SaaS
+          </a>
         </div>
       </div>
     );

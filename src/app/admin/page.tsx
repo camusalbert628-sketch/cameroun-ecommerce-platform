@@ -40,7 +40,7 @@ interface AdminOrder {
 }
 
 export default function AdminPage() {
-  const { user, switchDemoUser, showToast } = useApp();
+  const { user, showToast } = useApp();
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [claims, setClaims] = useState<AdminClaim[]>([]);
   const [orders, setOrders] = useState<AdminOrder[]>([]);
@@ -73,12 +73,12 @@ export default function AdminPage() {
         <p className="text-sm text-slate-600">
           Activez le profil Administrateur pour valider le contrôle qualité des produits partenaires, gérer les litiges SAV et superviser les commandes.
         </p>
-        <button
-          onClick={() => switchDemoUser("admin@exemple.cm")}
-          className="rounded-xl bg-[#0B192C] px-6 py-3 text-sm font-bold text-white hover:bg-[#1E3A5F] cursor-pointer"
+        <a
+          href="/compte?redirect=/admin"
+          className="inline-block rounded-xl bg-[#0B192C] px-6 py-3 text-sm font-bold text-white hover:bg-[#1E3A5F]"
         >
-          Activer : Clarisse Tchoumi (Administratrice)
-        </button>
+          Se connecter (Administrateur)
+        </a>
       </div>
     );
   }

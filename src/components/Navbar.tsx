@@ -54,8 +54,6 @@ export function Navbar() {
     setDeliveryCity,
     wishlist,
     user,
-    demoUsers,
-    switchDemoUser,
   } = useApp();
 
   const [search, setSearch] = useState("");
@@ -63,7 +61,6 @@ export function Navbar() {
   const [suggestions, setSuggestions] = useState<SearchHit[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  const [roleMenuOpen, setRoleMenuOpen] = useState(false);
   const [cityMenuOpen, setCityMenuOpen] = useState(false);
   const [megaDrawerOpen, setMegaDrawerOpen] = useState(false);
 
@@ -107,16 +104,10 @@ export function Navbar() {
     router.push(`/catalogue?${params.toString()}`);
   };
 
-  const handleRoleSwitch = async (email: string, targetRoute: string) => {
-    await switchDemoUser(email);
-    setRoleMenuOpen(false);
-    router.push(targetRoute);
-  };
-
   return (
     <>
       <header className="sticky top-0 z-40 w-full shadow-md">
-        {/* Tier 1: Top Utility & 5 Interfaces Bar */}
+        {/* Tier 1: Clean SaaS Utility Bar */}
         <div className="bg-[#081220] text-[11px] text-slate-300 border-b border-white/10">
           <div className="mx-auto flex max-w-[1680px] flex-wrap items-center justify-between gap-2 px-4 py-1.5">
             <div className="flex items-center gap-3">
@@ -130,65 +121,29 @@ export function Navbar() {
               </span>
             </div>
 
-            <div className="flex items-center gap-2">
-              <div className="hidden lg:flex items-center gap-1">
-                <span className="text-slate-400 mr-1">Interfaces Chap. 13 :</span>
-                <Link href="/" className="rounded px-2 py-0.5 hover:bg-white/10 transition">
-                  Client
-                </Link>
-                <Link href="/vendeur" className="rounded px-2 py-0.5 text-emerald-300 hover:bg-white/10 transition">
-                  Vendeur
-                </Link>
-                <Link href="/logistique" className="rounded px-2 py-0.5 text-orange-300 hover:bg-white/10 transition">
-                  Logistique
-                </Link>
-                <Link href="/admin" className="rounded px-2 py-0.5 text-sky-300 hover:bg-white/10 transition">
-                  Admin
-                </Link>
+            <div className="flex items-center gap-3">
+              {user && user.role !== "CLIENT" && (
                 <Link
-                  href="/direction"
-                  className="rounded bg-white/15 px-2 py-0.5 font-bold text-white hover:bg-white/25 transition"
+                  href={ROLE_LABELS[user.role]?.route || "/compte"}
+                  className="rounded bg-[#1E3A5F] px-2.5 py-0.5 font-bold text-white hover:bg-[#274b7a] transition"
                 >
-                  Direction (4 Associés)
+                  Mon Espace ({ROLE_LABELS[user.role]?.label || user.role})
                 </Link>
-              </div>
-
-              <div className="relative">
-                <button
-                  onClick={() => setRoleMenuOpen(!roleMenuOpen)}
-                  className="inline-flex items-center gap-1 rounded bg-[#1E3A5F] px-2.5 py-0.5 font-semibold text-white hover:bg-[#274b7a] transition cursor-pointer"
+              )}
+              {user && ["ADMIN", "EXECUTIVE", "SUPER_ADMIN"].includes(user.role) && (
+                <Link
+                  href="/super-admin"
+                  className="rounded bg-white/10 px-2.5 py-0.5 font-bold text-orange-300 hover:bg-white/20 transition"
                 >
-                  <User className="h-3 w-3 text-orange-400" />
-                  <span>{user ? `${user.name.split(" ")[0]} (${user.role})` : "Basculer de profil"}</span>
-                  <ChevronDown className="h-3 w-3" />
-                </button>
-
-                {roleMenuOpen && (
-                  <div className="absolute right-0 mt-1.5 w-72 rounded-xl border border-slate-200 bg-white p-2 text-slate-800 shadow-2xl z-50">
-                    <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                      Comptes & Rôles (Démo Instantanée)
-                    </div>
-                    {demoUsers.map((du) => {
-                      const meta = ROLE_LABELS[du.role] || ROLE_LABELS.CLIENT;
-                      return (
-                        <button
-                          key={du.id}
-                          onClick={() => handleRoleSwitch(du.email, meta.route)}
-                          className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-xs hover:bg-slate-50 transition cursor-pointer"
-                        >
-                          <div>
-                            <div className="font-semibold text-slate-900">{du.name}</div>
-                            <div className="text-[11px] text-slate-500">{du.email}</div>
-                          </div>
-                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${meta.color}`}>
-                            {meta.label}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+                  Console SaaS
+                </Link>
+              )}
+              <Link
+                href="/inscription-boutique"
+                className="font-bold text-orange-400 hover:text-orange-300 transition"
+              >
+                + Ouvrir ma boutique SaaS
+              </Link>
             </div>
           </div>
         </div>
@@ -397,10 +352,10 @@ export function Navbar() {
               Sur Commande
             </Link>
             <Link
-              href="/vendeur"
-              className="ml-auto rounded-md bg-white/10 px-2.5 py-1 font-bold hover:bg-white/20 shrink-0"
+              href="/inscription-boutique"
+              className="ml-auto rounded-md bg-orange-500 px-3 py-1 font-extrabold text-white hover:bg-orange-600 shrink-0 transition"
             >
-              Vendre sur la plateforme
+              Créer ma boutique SaaS
             </Link>
           </div>
         </div>
