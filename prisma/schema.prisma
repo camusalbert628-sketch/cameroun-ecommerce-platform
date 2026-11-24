@@ -8,20 +8,36 @@ datasource db {
 }
 
 model Store {
-  id            String         @id @default(cuid())
-  name          String
-  slug          String         @unique
-  customDomain  String?        @unique
-  tagline       String?
-  logoUrl       String?
-  primaryColor  String         @default("#0B192C")
-  accentColor   String         @default("#F97316")
-  plan          String         @default("STARTER") // STARTER, PRO, BUSINESS
-  status        String         @default("ACTIVE")  // ACTIVE, SUSPENDED
-  city          String         @default("Douala")
-  rccm          String?
-  niu           String?
-  createdAt     DateTime       @default(now())
+  id             String         @id @default(cuid())
+  name           String
+  slug           String         @unique
+  customDomain   String?        @unique
+  tagline        String?
+  description    String?
+  logoUrl        String?
+  bannerUrl      String?
+  primaryColor   String         @default("#0B192C")
+  secondaryColor String         @default("#1E3A5F")
+  accentColor    String         @default("#F97316")
+  buttonColor    String         @default("#F97316")
+  themePreset    String         @default("albedoo")
+  sector         String         @default("Commerce général")
+  commerceType   String         @default("B2C")
+  currency       String         @default("FCFA")
+  country        String         @default("Cameroun")
+  plan           String         @default("STARTER") // STARTER, PRO, BUSINESS
+  status         String         @default("ACTIVE")  // ACTIVE, SUSPENDED
+  city           String         @default("Douala")
+  quarter        String?
+  address        String?
+  businessPhone  String?
+  whatsappPhone  String?
+  businessEmail  String?
+  rccm           String?
+  niu            String?
+  configJson     String         @default("{}")
+  idempotencyKey String?        @unique
+  createdAt      DateTime       @default(now())
   users         User[]
   products      Product[]
   orders        Order[]
