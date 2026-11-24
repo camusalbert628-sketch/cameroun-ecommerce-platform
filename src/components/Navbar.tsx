@@ -230,11 +230,11 @@ export function Navbar() {
                   onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Rechercher sur Albedo'o : smartphone, café, onduleur, mode..."
-                  className="flex-1 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none"
+                  className="flex-1 rounded-l-xl sm:rounded-l-none px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none"
                 />
                 <button
                   type="submit"
-                  className="flex items-center justify-center bg-orange-500 px-4 sm:px-5 text-white hover:bg-orange-600 transition cursor-pointer"
+                  className="flex items-center justify-center rounded-r-xl bg-orange-500 px-4 sm:px-5 text-white hover:bg-orange-600 transition cursor-pointer"
                   aria-label="Rechercher"
                 >
                   <Search className="h-5 w-5" />
