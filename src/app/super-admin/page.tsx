@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { formatFcfa } from "@/lib/format";
 import { useApp } from "@/components/Providers";
+import { Select } from "@/components/ui/Select";
 
 interface TenantStoreRow {
   id: string;
@@ -593,15 +594,18 @@ export default function SuperAdminPage() {
                     {s.customDomain && <div className="text-[10px] font-semibold text-indigo-600">{s.customDomain}</div>}
                   </td>
                   <td className="py-3 pr-4">
-                    <select
+                    <Select
+                      size="xs"
                       value={s.plan}
-                      onChange={(e) => patchEntity({ storeId: s.id, plan: e.target.value }, `${s.name} → ${e.target.value}`)}
-                      className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-bold text-[#1E3A5F]"
-                    >
-                      <option value="STARTER">STARTER</option>
-                      <option value="PRO">PRO</option>
-                      <option value="BUSINESS">BUSINESS</option>
-                    </select>
+                      onChange={(v) => patchEntity({ storeId: s.id, plan: v }, `${s.name} → ${v}`)}
+                      className="w-28"
+                      buttonClassName="font-bold text-[#1E3A5F]"
+                      options={[
+                        { value: "STARTER", label: "STARTER" },
+                        { value: "PRO", label: "PRO" },
+                        { value: "BUSINESS", label: "BUSINESS" },
+                      ]}
+                    />
                   </td>
                   <td className="py-3 pr-4 tabular-nums">
                     {s.subscriptions[0] ? `${formatFcfa(s.subscriptions[0].priceFcfa)}/mois` : "Gratuit"}
@@ -677,16 +681,16 @@ export default function SuperAdminPage() {
                     {u.phone && <div className="text-[11px] text-slate-500">{u.phone}</div>}
                   </td>
                   <td className="py-3 pr-4">
-                    <select
+                    <Select
+                      size="xs"
                       value={u.storeId || ""}
-                      onChange={(e) => patchEntity({ userId: u.id, assignStoreId: e.target.value || null }, `Boutique assignée à ${u.name}`)}
-                      className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px]"
-                    >
-                      <option value="">Aucune (Plateforme)</option>
-                      {stores.map((s) => (
-                        <option key={s.id} value={s.id}>{s.name}</option>
-                      ))}
-                    </select>
+                      onChange={(v) => patchEntity({ userId: u.id, assignStoreId: v || null }, `Boutique assignée à ${u.name}`)}
+                      className="w-40"
+                      options={[
+                        { value: "", label: "Aucune (Plateforme)" },
+                        ...stores.map((s) => ({ value: s.id, label: s.name })),
+                      ]}
+                    />
                   </td>
                   <td className="py-3 pr-4">
                     <button
@@ -700,18 +704,21 @@ export default function SuperAdminPage() {
                     </button>
                   </td>
                   <td className="py-3 pr-4">
-                    <select
+                    <Select
+                      size="xs"
                       value={u.role}
-                      onChange={(e) => patchEntity({ userId: u.id, role: e.target.value }, `${u.name} → ${e.target.value}`)}
-                      className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-bold text-[#0B192C]"
-                    >
-                      <option value="CLIENT">CLIENT</option>
-                      <option value="VENDOR">VENDOR</option>
-                      <option value="LOGISTICS">LOGISTICS</option>
-                      <option value="ADMIN">ADMIN</option>
-                      <option value="EXECUTIVE">EXECUTIVE</option>
-                      <option value="SUPER_ADMIN">SUPER_ADMIN</option>
-                    </select>
+                      onChange={(v) => patchEntity({ userId: u.id, role: v }, `${u.name} → ${v}`)}
+                      className="w-32"
+                      buttonClassName="font-bold text-[#0B192C]"
+                      options={[
+                        { value: "CLIENT", label: "CLIENT" },
+                        { value: "VENDOR", label: "VENDOR" },
+                        { value: "LOGISTICS", label: "LOGISTICS" },
+                        { value: "ADMIN", label: "ADMIN" },
+                        { value: "EXECUTIVE", label: "EXECUTIVE" },
+                        { value: "SUPER_ADMIN", label: "SUPER_ADMIN" },
+                      ]}
+                    />
                   </td>
                   <td className="py-3 text-right space-x-1.5 whitespace-nowrap">
                     <button
@@ -781,15 +788,18 @@ export default function SuperAdminPage() {
                     </button>
                   </td>
                   <td className="py-3 pr-4">
-                    <select
+                    <Select
+                      size="xs"
                       value={v.status}
-                      onChange={(e) => patchEntity({ entity: "VENDOR", vendorId: v.id, status: e.target.value }, `KYC ${v.companyName} → ${e.target.value}`)}
-                      className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-bold"
-                    >
-                      <option value="PENDING">PENDING</option>
-                      <option value="APPROVED">APPROVED</option>
-                      <option value="SUSPENDED">SUSPENDED</option>
-                    </select>
+                      onChange={(val) => patchEntity({ entity: "VENDOR", vendorId: v.id, status: val }, `KYC ${v.companyName} → ${val}`)}
+                      className="w-28"
+                      buttonClassName="font-bold"
+                      options={[
+                        { value: "PENDING", label: "PENDING" },
+                        { value: "APPROVED", label: "APPROVED" },
+                        { value: "SUSPENDED", label: "SUSPENDED" },
+                      ]}
+                    />
                   </td>
                 </tr>
               ))}
@@ -916,15 +926,18 @@ export default function SuperAdminPage() {
                       </button>
                     </td>
                     <td className="py-3 pr-4">
-                      <select
+                      <Select
+                        size="xs"
                         value={p.qualityStatus}
-                        onChange={(e) => patchEntity({ entity: "PRODUCT", productId: p.id, qualityStatus: e.target.value }, `QC ${p.title} → ${e.target.value}`)}
-                        className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-bold"
-                      >
-                        <option value="PENDING_QC">PENDING_QC</option>
-                        <option value="APPROVED">APPROVED</option>
-                        <option value="REJECTED">REJECTED</option>
-                      </select>
+                        onChange={(val) => patchEntity({ entity: "PRODUCT", productId: p.id, qualityStatus: val }, `QC ${p.title} → ${val}`)}
+                        className="w-32"
+                        buttonClassName="font-bold"
+                        options={[
+                          { value: "PENDING_QC", label: "PENDING_QC" },
+                          { value: "APPROVED", label: "APPROVED" },
+                          { value: "REJECTED", label: "REJECTED" },
+                        ]}
+                      />
                     </td>
                     <td className="py-3 text-right">
                       <button
@@ -979,30 +992,36 @@ export default function SuperAdminPage() {
                     <td className="py-3 pr-4">{o.customerName} · {o.city}</td>
                     <td className="py-3 pr-4 font-bold tabular-nums">{formatFcfa(o.totalFcfa)}</td>
                     <td className="py-3 pr-4">
-                      <select
+                      <Select
+                        size="xs"
                         value={o.paymentStatus}
-                        onChange={(e) => patchEntity({ entity: "ORDER", orderId: o.id, paymentStatus: e.target.value }, `Paiement ${o.orderNumber} → ${e.target.value}`)}
-                        className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-bold"
-                      >
-                        <option value="PENDING">PENDING</option>
-                        <option value="PAID">PAID</option>
-                        <option value="FAILED">FAILED</option>
-                        <option value="REFUNDED">REFUNDED</option>
-                      </select>
+                        onChange={(val) => patchEntity({ entity: "ORDER", orderId: o.id, paymentStatus: val }, `Paiement ${o.orderNumber} → ${val}`)}
+                        className="w-28"
+                        buttonClassName="font-bold"
+                        options={[
+                          { value: "PENDING", label: "PENDING" },
+                          { value: "PAID", label: "PAID" },
+                          { value: "FAILED", label: "FAILED" },
+                          { value: "REFUNDED", label: "REFUNDED" },
+                        ]}
+                      />
                     </td>
                     <td className="py-3 pr-4">
-                      <select
+                      <Select
+                        size="xs"
                         value={o.status}
-                        onChange={(e) => patchEntity({ entity: "ORDER", orderId: o.id, status: e.target.value }, `Statut ${o.orderNumber} → ${e.target.value}`)}
-                        className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-bold"
-                      >
-                        <option value="PENDING_PAYMENT">PENDING_PAYMENT</option>
-                        <option value="CONFIRMED">CONFIRMED</option>
-                        <option value="QC_PASSED">QC_PASSED</option>
-                        <option value="IN_TRANSIT">IN_TRANSIT</option>
-                        <option value="DELIVERED">DELIVERED</option>
-                        <option value="CANCELLED">CANCELLED</option>
-                      </select>
+                        onChange={(val) => patchEntity({ entity: "ORDER", orderId: o.id, status: val }, `Statut ${o.orderNumber} → ${val}`)}
+                        className="w-36"
+                        buttonClassName="font-bold"
+                        options={[
+                          { value: "PENDING_PAYMENT", label: "PENDING_PAYMENT" },
+                          { value: "CONFIRMED", label: "CONFIRMED" },
+                          { value: "QC_PASSED", label: "QC_PASSED" },
+                          { value: "IN_TRANSIT", label: "IN_TRANSIT" },
+                          { value: "DELIVERED", label: "DELIVERED" },
+                          { value: "CANCELLED", label: "CANCELLED" },
+                        ]}
+                      />
                     </td>
                     <td className="py-3 pr-4">
                       <button
@@ -1098,17 +1117,20 @@ export default function SuperAdminPage() {
                       </button>
                     </td>
                     <td className="py-3 pr-4">
-                      <select
+                      <Select
+                        size="xs"
                         value={c.status}
-                        onChange={(e) => patchEntity({ entity: "CLAIM", claimId: c.id, status: e.target.value }, `Ticket ${c.ticketNumber} → ${e.target.value}`)}
-                        className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-bold"
-                      >
-                        <option value="OPEN">OPEN</option>
-                        <option value="IN_REVIEW">IN_REVIEW</option>
-                        <option value="APPROVED">APPROVED</option>
-                        <option value="RESOLVED">RESOLVED</option>
-                        <option value="REJECTED">REJECTED</option>
-                      </select>
+                        onChange={(val) => patchEntity({ entity: "CLAIM", claimId: c.id, status: val }, `Ticket ${c.ticketNumber} → ${val}`)}
+                        className="w-28"
+                        buttonClassName="font-bold"
+                        options={[
+                          { value: "OPEN", label: "OPEN" },
+                          { value: "IN_REVIEW", label: "IN_REVIEW" },
+                          { value: "APPROVED", label: "APPROVED" },
+                          { value: "RESOLVED", label: "RESOLVED" },
+                          { value: "REJECTED", label: "REJECTED" },
+                        ]}
+                      />
                     </td>
                   </tr>
                 ))}
@@ -1224,10 +1246,16 @@ export default function SuperAdminPage() {
             </h2>
             <input type="text" required value={newCode} onChange={(e) => setNewCode(e.target.value.toUpperCase())} placeholder="EX: DOUALA20" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold uppercase" />
             <div className="grid grid-cols-2 gap-3">
-              <select value={newType} onChange={(e) => setNewType(e.target.value as "PERCENT" | "FIXED")} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold">
-                <option value="PERCENT">Pourcentage (%)</option>
-                <option value="FIXED">Montant fixe (FCFA)</option>
-              </select>
+              <Select
+                size="sm"
+                value={newType}
+                onChange={(v) => setNewType(v as "PERCENT" | "FIXED")}
+                buttonClassName="font-semibold"
+                options={[
+                  { value: "PERCENT", label: "Pourcentage (%)" },
+                  { value: "FIXED", label: "Montant fixe (FCFA)" },
+                ]}
+              />
               <input type="number" required min={1} value={newValue} onChange={(e) => setNewValue(e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold" />
             </div>
             <input type="number" min={0} value={newMinOrder} onChange={(e) => setNewMinOrder(e.target.value)} placeholder="Minimum FCFA" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold" />

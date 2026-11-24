@@ -30,6 +30,7 @@ import {
   X,
 } from "lucide-react";
 import { useApp } from "@/components/Providers";
+import { Select } from "@/components/ui/Select";
 import { LiveStorePreview } from "@/components/onboarding/LiveStorePreview";
 import {
   COMMERCE_TYPES,
@@ -674,15 +675,15 @@ export default function InscriptionBoutiquePage() {
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">Devise</label>
-                    <select
+                    <Select
                       value={draft.currency}
-                      onChange={(e) => updateDraft("currency", e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                    >
-                      <option value="FCFA">FCFA (XAF)</option>
-                      <option value="EUR">Euro (€)</option>
-                      <option value="USD">Dollar ($)</option>
-                    </select>
+                      onChange={(v) => updateDraft("currency", v)}
+                      options={[
+                        { value: "FCFA", label: "FCFA (XAF)" },
+                        { value: "EUR", label: "Euro (€)" },
+                        { value: "USD", label: "Dollar ($)" },
+                      ]}
+                    />
                   </div>
 
                   <div className="sm:col-span-2 lg:col-span-3">
@@ -699,28 +700,20 @@ export default function InscriptionBoutiquePage() {
 
                   <div className="lg:col-span-2">
                     <label className="block text-xs font-bold text-slate-700 mb-1">Secteur d&apos;activité</label>
-                    <select
+                    <Select
                       value={draft.sector}
-                      onChange={(e) => updateDraft("sector", e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                    >
-                      {SECTORS.map((s) => (
-                        <option key={s} value={s}>{s}</option>
-                      ))}
-                    </select>
+                      onChange={(v) => updateDraft("sector", v)}
+                      options={SECTORS.map((s) => ({ value: s, label: s }))}
+                    />
                   </div>
 
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">Type de commerce</label>
-                    <select
+                    <Select
                       value={draft.commerceType}
-                      onChange={(e) => updateDraft("commerceType", e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                    >
-                      {COMMERCE_TYPES.map((c) => (
-                        <option key={c.id} value={c.id}>{c.label}</option>
-                      ))}
-                    </select>
+                      onChange={(v) => updateDraft("commerceType", v)}
+                      options={COMMERCE_TYPES.map((c) => ({ value: c.id, label: c.label }))}
+                    />
                   </div>
 
                   <div>
@@ -734,18 +727,18 @@ export default function InscriptionBoutiquePage() {
 
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">Ville principale</label>
-                    <select
+                    <Select
                       value={draft.city}
-                      onChange={(e) => updateDraft("city", e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"
-                    >
-                      <option value="Douala">Douala</option>
-                      <option value="Yaoundé">Yaoundé</option>
-                      <option value="Bafoussam">Bafoussam</option>
-                      <option value="Kribi">Kribi</option>
-                      <option value="Garoua">Garoua</option>
-                      <option value="Bamenda">Bamenda</option>
-                    </select>
+                      onChange={(v) => updateDraft("city", v)}
+                      options={[
+                        { value: "Douala", label: "Douala" },
+                        { value: "Yaoundé", label: "Yaoundé" },
+                        { value: "Bafoussam", label: "Bafoussam" },
+                        { value: "Kribi", label: "Kribi" },
+                        { value: "Garoua", label: "Garoua" },
+                        { value: "Bamenda", label: "Bamenda" },
+                      ]}
+                    />
                   </div>
 
                   <div>
@@ -1249,15 +1242,12 @@ export default function InscriptionBoutiquePage() {
                             placeholder="Nom du produit *"
                             className="sm:col-span-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs"
                           />
-                          <select
+                          <Select
                             value={prod.categoryId}
-                            onChange={(e) => updateProductRow(prod.id, { categoryId: e.target.value })}
-                            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs"
-                          >
-                            {categories.map((c) => (
-                              <option key={c.id} value={c.id}>{c.name}</option>
-                            ))}
-                          </select>
+                            onChange={(v) => updateProductRow(prod.id, { categoryId: v })}
+                            size="sm"
+                            options={categories.map((c) => ({ value: c.id, label: c.name }))}
+                          />
                           <input
                             type="number"
                             min={1}

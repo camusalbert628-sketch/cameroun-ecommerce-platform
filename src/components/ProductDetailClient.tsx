@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Select } from "@/components/ui/Select";
 import {
   ShoppingCart,
   ShieldCheck,
@@ -467,19 +468,19 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailP
             <div className="text-xs space-y-1.5">
               <div className="flex items-center gap-1.5 font-semibold text-slate-700">
                 <Truck className="h-4 w-4 text-orange-500 shrink-0" />
-                <span>
-                  Livraison à{" "}
-                  <select
+                <span className="inline-flex items-center gap-1.5">
+                  Livraison à
+                  <Select
                     value={deliveryCity}
-                    onChange={(e) => setDeliveryCity(e.target.value as CameroonCity)}
-                    className="font-extrabold text-[#1E3A5F] underline bg-transparent cursor-pointer focus:outline-none"
-                  >
-                    {(["Douala", "Yaoundé", "Bafoussam", "Kribi", "Garoua"] as CameroonCity[]).map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(v) => setDeliveryCity(v as CameroonCity)}
+                    size="xs"
+                    className="w-32"
+                    buttonClassName="font-extrabold text-[#1E3A5F]"
+                    options={(["Douala", "Yaoundé", "Bafoussam", "Kribi", "Garoua"] as CameroonCity[]).map((c) => ({
+                      value: c,
+                      label: c,
+                    }))}
+                  />
                 </span>
               </div>
               <div className="flex items-center gap-1.5 text-emerald-700 font-bold">
@@ -893,17 +894,19 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailP
                 placeholder="Votre nom"
                 className="rounded-lg border border-slate-200 px-3 py-2 text-xs"
               />
-              <select
-                value={revRating}
-                onChange={(e) => setRevRating(Number(e.target.value))}
-                className="rounded-lg border border-slate-200 px-2 py-2 text-xs font-bold"
-              >
-                <option value={5}>5 ★ Excellent</option>
-                <option value={4}>4 ★ Très bien</option>
-                <option value={3}>3 ★ Correct</option>
-                <option value={2}>2 ★ Moyen</option>
-                <option value={1}>1 ★ Décevant</option>
-              </select>
+              <Select
+                value={String(revRating)}
+                onChange={(v) => setRevRating(Number(v))}
+                size="sm"
+                className="w-40"
+                options={[
+                  { value: "5", label: "5 ★ Excellent" },
+                  { value: "4", label: "4 ★ Très bien" },
+                  { value: "3", label: "3 ★ Correct" },
+                  { value: "2", label: "2 ★ Moyen" },
+                  { value: "1", label: "1 ★ Décevant" },
+                ]}
+              />
             </div>
             <textarea
               required

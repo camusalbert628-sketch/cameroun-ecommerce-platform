@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { User, Gift, LogOut, Package, ArrowRight, Store, ShieldAlert } from "lucide-react";
 import { useApp } from "@/components/Providers";
+import { Select } from "@/components/ui/Select";
 import { formatFcfa, ORDER_STATUS_META, ROLE_LABELS } from "@/lib/format";
 
 interface OrderSummary {
@@ -146,17 +147,17 @@ function CompteContent() {
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">Ville</label>
-                    <select
+                    <Select
                       value={city}
-                      onChange={(e) => setCity(e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                    >
-                      <option value="Douala">Douala</option>
-                      <option value="Yaoundé">Yaoundé</option>
-                      <option value="Bafoussam">Bafoussam</option>
-                      <option value="Kribi">Kribi</option>
-                      <option value="Garoua">Garoua</option>
-                    </select>
+                      onChange={setCity}
+                      options={[
+                        { value: "Douala", label: "Douala" },
+                        { value: "Yaoundé", label: "Yaoundé" },
+                        { value: "Bafoussam", label: "Bafoussam" },
+                        { value: "Kribi", label: "Kribi" },
+                        { value: "Garoua", label: "Garoua" },
+                      ]}
+                    />
                   </div>
                 </div>
               </>

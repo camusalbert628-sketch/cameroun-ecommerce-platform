@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { Select } from "@/components/ui/Select";
 import {
   CheckCircle2,
   AlertCircle,
@@ -291,10 +292,9 @@ export default function CheckoutPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Zone / Ville *</label>
-                <select
+                <Select
                   value={selectedZoneId}
-                  onChange={(e) => {
-                    const zId = e.target.value;
+                  onChange={(zId) => {
                     setSelectedZoneId(zId);
                     const z = zones.find((x) => x.id === zId);
                     if (z && z.city !== "Douala" && deliveryMethod === "INTERNAL_DOUALA") {
@@ -304,14 +304,11 @@ export default function CheckoutPage() {
                       setPaymentMethod("ORANGE_MONEY");
                     }
                   }}
-                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm focus:border-[#1E3A5F] focus:outline-none"
-                >
-                  {zones.map((z) => (
-                    <option key={z.id} value={z.id}>
-                      {z.zoneName} ({formatFcfa(z.feeFcfa)})
-                    </option>
-                  ))}
-                </select>
+                  options={zones.map((z) => ({
+                    value: z.id,
+                    label: `${z.zoneName} (${formatFcfa(z.feeFcfa)})`,
+                  }))}
+                />
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Quartier *</label>

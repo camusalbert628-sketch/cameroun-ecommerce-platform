@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Select } from "@/components/ui/Select";
 import {
   ShoppingCart,
   Search,
@@ -211,19 +212,18 @@ export function Navbar() {
 
             {/* Unified Amazon Search Bar with Category Dropdown + Autocomplete */}
             <div ref={searchRef} className="relative flex-1">
-              <form onSubmit={handleSearch} className="flex w-full overflow-hidden rounded-xl bg-white ring-2 ring-transparent focus-within:ring-orange-500">
-                <select
+              <form onSubmit={handleSearch} className="flex w-full rounded-xl bg-white ring-2 ring-transparent focus-within:ring-orange-500">
+                <Select
                   value={searchCategory}
-                  onChange={(e) => setSearchCategory(e.target.value)}
-                  className="hidden sm:block max-w-[155px] border-r border-slate-200 bg-slate-100 px-2.5 py-2.5 text-xs font-semibold text-slate-700 focus:outline-none cursor-pointer"
-                >
-                  <option value="all">Toutes catégories</option>
-                  {ALL_CATEGORIES.map((c) => (
-                    <option key={c.slug} value={c.slug}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setSearchCategory}
+                  size="sm"
+                  className="hidden sm:block w-[165px] shrink-0"
+                  buttonClassName="rounded-l-xl rounded-r-none border-0 border-r border-slate-200 bg-slate-100 h-full font-semibold text-slate-700 shadow-none focus:ring-0"
+                  options={[
+                    { value: "all", label: "Toutes catégories" },
+                    ...ALL_CATEGORIES.map((c) => ({ value: c.slug, label: c.name })),
+                  ]}
+                />
                 <input
                   type="text"
                   value={search}

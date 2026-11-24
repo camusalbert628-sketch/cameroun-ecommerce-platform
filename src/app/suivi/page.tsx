@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { Search, PackageCheck, CheckCircle2, AlertTriangle, MessageSquarePlus, FileText, Printer, X } from "lucide-react";
 import { formatFcfa, ORDER_STATUS_META, PAYMENT_METHOD_LABELS, DELIVERY_METHOD_LABELS } from "@/lib/format";
 import { useApp } from "@/components/Providers";
+import { Select } from "@/components/ui/Select";
 
 interface OrderDetail {
   id: string;
@@ -284,17 +285,17 @@ function SuiviContent() {
               <form onSubmit={handleOpenClaim} className="space-y-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Type de demande</label>
-                  <select
+                  <Select
                     value={claimType}
-                    onChange={(e) => setClaimType(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                  >
-                    <option value="RETURN">Demande de retour produit</option>
-                    <option value="REFUND">Demande de remboursement</option>
-                    <option value="QUALITY_ISSUE">Problème qualité / Non-conformité</option>
-                    <option value="DELIVERY_DELAY">Retard de livraison</option>
-                    <option value="WARRANTY">Activation de garantie</option>
-                  </select>
+                    onChange={setClaimType}
+                    options={[
+                      { value: "RETURN", label: "Demande de retour produit" },
+                      { value: "REFUND", label: "Demande de remboursement" },
+                      { value: "QUALITY_ISSUE", label: "Problème qualité / Non-conformité" },
+                      { value: "DELIVERY_DELAY", label: "Retard de livraison" },
+                      { value: "WARRANTY", label: "Activation de garantie" },
+                    ]}
+                  />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Description détaillée</label>

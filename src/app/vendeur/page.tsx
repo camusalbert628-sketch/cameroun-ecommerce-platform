@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { Store, PlusCircle, Package, Wallet, ShieldCheck, AlertCircle, Upload, CreditCard, Globe, Bell } from "lucide-react";
 import { useApp } from "@/components/Providers";
+import { Select } from "@/components/ui/Select";
 import { formatFcfa, ORDER_STATUS_META } from "@/lib/format";
 
 interface VendorProduct {
@@ -394,17 +395,11 @@ export default function VendeurPage() {
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Catégorie</label>
-                <select
+                <Select
                   value={categoryId}
-                  onChange={(e) => setCategoryId(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                >
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setCategoryId}
+                  options={categories.map((c) => ({ value: c.id, label: c.name }))}
+                />
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Photo du produit (max 2 Mo)</label>

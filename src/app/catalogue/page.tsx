@@ -3,6 +3,7 @@
 import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { Select } from "@/components/ui/Select";
 import {
   Search,
   Star,
@@ -135,16 +136,19 @@ function CatalogueContent() {
           </div>
 
           <div className="flex items-center gap-2.5">
-            <select
+            <Select
               value={sort}
-              onChange={(e) => setSort(e.target.value)}
-              className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 focus:outline-none cursor-pointer"
-            >
-              <option value="featured">Trier par : Pertinence</option>
-              <option value="price_asc">Prix : du moins cher au plus cher</option>
-              <option value="price_desc">Prix : du plus cher au moins cher</option>
-              <option value="rating">Moyenne des avis clients</option>
-            </select>
+              onChange={setSort}
+              size="sm"
+              align="right"
+              className="w-60"
+              options={[
+                { value: "featured", label: "Trier par : Pertinence" },
+                { value: "price_asc", label: "Prix : du moins cher au plus cher" },
+                { value: "price_desc", label: "Prix : du plus cher au moins cher" },
+                { value: "rating", label: "Moyenne des avis clients" },
+              ]}
+            />
 
             <div className="flex rounded-lg border border-slate-200 bg-slate-50 p-0.5">
               <button
