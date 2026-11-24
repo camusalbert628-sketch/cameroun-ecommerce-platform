@@ -1,0 +1,286 @@
+﻿generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Store {
+  id            String         @id @default(cuid())
+  name          String
+  slug          String         @unique
+  customDomain  String?        @unique
+  tagline       String?
+  logoUrl       String?
+  primaryColor  String         @default("#0B192C")
+  accentColor   String         @default("#F97316")
+  plan          String         @default("STARTER") // STARTER, PRO, BUSINESS
+  status        String         @default("ACTIVE")  // ACTIVE, SUSPENDED
+  city          String         @default("Douala")
+  rccm          String?
+  niu           String?
+  createdAt     DateTime       @default(now())
+  users         User[]
+  products      Product[]
+  orders        Order[]
+  deliveryZones DeliveryZone[]
+  subscriptions Subscription[]
+  invoices      BillingInvoice[]
+  analytics     AnalyticsEvent[]
+  notifications NotificationLog[]
+}
+
+model NotificationLog {
+  id        String   @id @default(cuid())
+  storeId   String?
+  store     Store?   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  orderId   String?
+  channel   String   // WHATSAPP, EMAIL, SMS
+  recipient String
+  subject   String
+  message   String
+  status    String   @default("SENT") // SENT, QUEUED, FAILED
+  createdAt DateTime @default(now())
+}
+
+model BillingInvoice {
+  id            String   @id @default(cuid())
+  invoiceNumber String   @unique
+  storeId       String
+  store         Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  plan          String
+  amountFcfa    Int
+  paymentMethod String   // ORANGE_MONEY, MTN_MOMO, CARD_VISA_MC
+  status        String   @default("PAID")
+  createdAt     DateTime @default(now())
+}
+
+model AnalyticsEvent {
+  id        String   @id @default(cuid())
+  storeId   String?
+  store     Store?   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  eventType String   // PAGE_VIEW, ADD_TO_CART, CHECKOUT_STARTED, ORDER_PAID
+  productId String?
+  createdAt DateTime @default(now())
+}
+
+model Subscription {
+  id               String   @id @default(cuid())
+  storeId          String
+  store            Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  plan             String   // STARTER, PRO, BUSINESS
+  priceFcfa        Int      @default(0)
+  status           String   @default("ACTIVE") // ACTIVE, PAST_DUE, CANCELLED
+  currentPeriodEnd DateTime
+  createdAt        DateTime @default(now())
+}
+
+model User {
+  id            String         @id @default(cuid())
+  name          String
+  email         String         @unique
+  passwordHash  String
+  phone         String?
+  role          String         @default("CLIENT") // CLIENT, VENDOR, LOGISTICS, ADMIN, EXECUTIVE, SUPER_ADMIN
+  title         String?        // Ex: Directeur Général, Dir. Commercial, etc.
+  city          String         @default("Douala")
+  quarter       String?
+  loyaltyPoints Int            @default(0)
+  storeId       String?
+  store         Store?         @relation(fields: [storeId], references: [id])
+  createdAt     DateTime       @default(now())
+  vendorProfile VendorProfile?
+  orders        Order[]
+  claims        Claim[]
+}
+
+model VendorProfile {
+  id             String    @id @default(cuid())
+  userId         String    @unique
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyName    String
+  rccm           String?
+  niu            String?
+  city           String    @default("Douala")
+  status         String    @default("APPROVED") // PENDING, APPROVED, SUSPENDED
+  commissionRate Float     @default(0.12)
+  verifiedBadge  Boolean   @default(true)
+  balanceFcfa    Int       @default(0)
+  createdAt      DateTime  @default(now())
+  products       Product[]
+}
+
+model Category {
+  id               String    @id @default(cuid())
+  name             String
+  slug             String    @unique
+  description      String
+  icon             String
+  isPriorityLaunch Boolean   @default(false)
+  sortOrder        Int       @default(0)
+  products         Product[]
+}
+
+model Product {
+  id                  String         @id @default(cuid())
+  title               String
+  slug                String         @unique
+  description         String
+  sku                 String         @unique
+  priceFcfa           Int
+  costPriceFcfa       Int
+  compareAtFcfa       Int?
+  initialStock        Int            @default(0)
+  stock               Int            @default(0)
+  salesModel          String         @default("DIRECT_RETAIL") // DIRECT_RETAIL, MARKETPLACE_PARTNER, ON_ORDER
+  qualityStatus       String         @default("APPROVED") // PENDING_QC, APPROVED, REJECTED
+  warrantyMonths      Int            @default(12)
+  leadTimeDaysDouala  Int            @default(1)
+  leadTimeDaysYaounde Int            @default(2)
+  leadTimeDaysOther   Int            @default(4)
+  imageUrl            String
+  specsJson           String         @default("{}")
+  rating              Float          @default(4.7)
+  reviewCount         Int            @default(0)
+  isFeatured          Boolean        @default(false)
+  isSponsored         Boolean        @default(false)
+  categoryId          String
+  category            Category       @relation(fields: [categoryId], references: [id])
+  storeId             String?
+  store               Store?         @relation(fields: [storeId], references: [id])
+  vendorId            String?
+  vendor              VendorProfile? @relation(fields: [vendorId], references: [id])
+  createdAt           DateTime       @default(now())
+  orderItems          OrderItem[]
+  reviews             Review[]
+  variants            ProductVariant[]
+}
+
+model ProductVariant {
+  id              String  @id @default(cuid())
+  productId       String
+  product         Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  label           String  // Ex: "256 Go · Bleu Nuit", "Taille L"
+  sku             String  @unique
+  usesCustomPrice Boolean @default(false)
+  priceFcfa       Int
+  initialStock    Int     @default(0)
+  stock           Int     @default(0)
+  colorHex        String?
+}
+
+model Order {
+  id                  String       @id @default(cuid())
+  orderNumber         String       @unique
+  storeId             String?
+  store               Store?       @relation(fields: [storeId], references: [id])
+  userId              String?
+  user                User?        @relation(fields: [userId], references: [id])
+  customerName        String
+  customerPhone       String
+  customerEmail       String?
+  city                String
+  quarter             String
+  deliveryAddress     String
+  deliveryMethod      String       // INTERNAL_DOUALA, PARTNER_COURIER, INTERCITY_TRANSPORT, RELAY_POINT, STORE_PICKUP
+  paymentMethod       String       // ORANGE_MONEY, MTN_MOMO, CARD_VISA_MC, CASH_ON_DELIVERY
+  paymentStatus       String       @default("PENDING") // PENDING, PAID, FAILED, REFUNDED
+  paymentReference    String?
+  status              String       @default("PENDING_PAYMENT")
+  subtotalFcfa        Int
+  deliveryFeeFcfa     Int
+  discountFcfa        Int          @default(0)
+  totalFcfa           Int
+  commissionTotalFcfa Int          @default(0)
+  assignedCourier     String?
+  qcCheckedBy         String?
+  trackingNotes       String?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  items               OrderItem[]
+  events              OrderEvent[]
+  claims              Claim[]
+  transactions        PaymentTransaction[]
+}
+
+model PaymentTransaction {
+  id         String   @id @default(cuid())
+  orderId    String
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  provider   String   // ORANGE_MONEY, MTN_MOMO, CARD_VISA_MC, CASH_ON_DELIVERY
+  reference  String   @unique
+  amountFcfa Int
+  status     String   @default("PENDING") // PENDING, SUCCESS, FAILED
+  rawPayload String?
+  createdAt  DateTime @default(now())
+}
+
+model OrderItem {
+  id             String  @id @default(cuid())
+  orderId        String
+  order          Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId      String
+  product        Product @relation(fields: [productId], references: [id])
+  vendorId       String?
+  variantId      String?
+  variantLabel   String?
+  quantity       Int
+  unitPriceFcfa  Int
+  costPriceFcfa  Int
+  commissionFcfa Int     @default(0)
+}
+
+model OrderEvent {
+  id          String   @id @default(cuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  stepCode    String
+  label       String
+  description String
+  actorName   String
+  createdAt   DateTime @default(now())
+}
+
+model Claim {
+  id               String   @id @default(cuid())
+  ticketNumber     String   @unique
+  orderId          String
+  order            Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  userId           String?
+  user             User?    @relation(fields: [userId], references: [id])
+  type             String   // RETURN, REFUND, QUALITY_ISSUE, DELIVERY_DELAY, WARRANTY
+  status           String   @default("OPEN") // OPEN, IN_REVIEW, APPROVED, RESOLVED, REJECTED
+  reason           String
+  resolutionNote   String?
+  refundAmountFcfa Int      @default(0)
+  createdAt        DateTime @default(now())
+}
+
+model Review {
+  id               String   @id @default(cuid())
+  productId        String
+  product          Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  authorName       String
+  city             String
+  rating           Int
+  comment          String
+  verifiedPurchase Boolean  @default(true)
+  createdAt        DateTime @default(now())
+}
+
+model DeliveryZone {
+  id             String  @id @default(cuid())
+  storeId        String?
+  store          Store?  @relation(fields: [storeId], references: [id])
+  city           String
+  zoneName       String
+  feeFcfa        Int
+  estimatedDays  String
+  supportsCod    Boolean @default(true)
+  codMaxFcfa     Int     @default(150000)
+  relayPointName String?
+}
+
+

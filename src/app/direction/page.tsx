@@ -40,6 +40,7 @@ interface AnalyticsData {
   };
   byCity: { city: string; orders: number; gmv: number }[];
   byCategory: { category: string; gmv: number; units: number }[];
+  funnel?: { pageViews: number; addToCarts: number; paidOrders: number };
 }
 
 export default function DirectionPage() {
@@ -55,7 +56,7 @@ export default function DirectionPage() {
     return <div className="mx-auto max-w-[1680px] px-4 py-12 text-sm text-slate-500">Chargement des KPIs de direction...</div>;
   }
 
-  const { kpis, byCity, byCategory } = data;
+  const { kpis, byCity, byCategory, funnel } = data;
   const maxCityGmv = Math.max(...byCity.map((c) => c.gmv), 1);
   const maxCatGmv = Math.max(...byCategory.map((c) => c.gmv), 1);
 
@@ -272,6 +273,29 @@ export default function DirectionPage() {
           </div>
         </div>
       </div>
+
+      {/* Real Conversion Funnel */}
+      {funnel && (
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+          <h3 className="text-base font-extrabold text-[#0B192C]">
+            Entonnoir de Conversion Temps Réel (Tracking SaaS)
+          </h3>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="rounded-xl bg-slate-50 p-4 border border-slate-200">
+              <div className="text-xs font-semibold text-slate-500">1. Vues Fiches Produits</div>
+              <div className="mt-1 text-2xl font-extrabold text-[#0B192C] tabular-nums">{funnel.pageViews}</div>
+            </div>
+            <div className="rounded-xl bg-orange-50 p-4 border border-orange-200">
+              <div className="text-xs font-semibold text-orange-700">2. Ajouts au Panier</div>
+              <div className="mt-1 text-2xl font-extrabold text-orange-600 tabular-nums">{funnel.addToCarts}</div>
+            </div>
+            <div className="rounded-xl bg-emerald-50 p-4 border border-emerald-200">
+              <div className="text-xs font-semibold text-emerald-700">3. Commandes Enregistrées</div>
+              <div className="mt-1 text-2xl font-extrabold text-emerald-700 tabular-nums">{funnel.paidOrders}</div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

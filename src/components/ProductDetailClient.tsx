@@ -66,6 +66,11 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailP
 
   useEffect(() => {
     addRecentlyViewed(product.id);
+    fetch("/api/analytics/track", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ eventType: "PAGE_VIEW", productId: product.id }),
+    }).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product.id]);
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(
@@ -137,6 +142,11 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailP
       return;
     }
     setStockError(null);
+    fetch("/api/analytics/track", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ eventType: "ADD_TO_CART", productId: product.id }),
+    }).catch(() => {});
     addToCart(
       {
         productId: product.id,
@@ -161,6 +171,11 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailP
       return;
     }
     setStockError(null);
+    fetch("/api/analytics/track", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ eventType: "ADD_TO_CART", productId: product.id }),
+    }).catch(() => {});
     addToCart(
       {
         productId: product.id,

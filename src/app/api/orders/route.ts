@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { sendTransactionalNotification } from "@/lib/notifications";
 
 class StockValidationError extends Error {
   constructor(message: string) {
@@ -333,6 +334,38 @@ export async function POST(req: NextRequest) {
 
       return { order, outOfStockAlerts };
     });
+
+    // Dispatch automated transactional notifications (non-blocking)
+    sendTransactionalNotification({
+      storeId: result.order.storeId,
+      orderId: result.order.id,
+      channel: "WHATSAPP",
+      recipient: result.order.customerPhone,
+      subject: `Confirmation Commande ${result.order.orderNumber}`,
+      message: `Bonjour ${result.order.customerName}, votre commande de ${result.order.totalFcfa.toLocaleString("fr-FR")} FCFA est confirmée pour ${result.order.city}.`,
+    }).catch(() => {});
+
+    if (result.order.customerEmail) {
+      sendTransactionalNotification({
+        storeId: result.order.storeId,
+        orderId: result.order.id,
+        channel: "EMAIL",
+        recipient: result.order.customerEmail,
+        subject: `Facture & Suivi ${result.order.orderNumber}`,
+        message: `Merci pour votre commande sur Albedo'o. Suivez vos 13 étapes sur /suivi?order=${result.order.orderNumber}.`,
+      }).catch(() => {});
+    }
+
+    if (result.outOfStockAlerts.length > 0) {
+      sendTransactionalNotification({
+        storeId: result.order.storeId,
+        orderId: result.order.id,
+        channel: "WHATSAPP",
+        recipient: "Responsable Stock",
+        subject: "Alerte Rupture de Stock",
+        message: result.outOfStockAlerts.join(" | "),
+      }).catch(() => {});
+    }
 
     return NextResponse.json(result, { status: 201 });
   } catch (error) {

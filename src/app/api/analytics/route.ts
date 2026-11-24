@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
-  const [orders, products, pageViews, paidEvents] = await Promise.all([
+  const [orders, products, pageViews, addToCarts, paidEvents] = await Promise.all([
     prisma.order.findMany({
       include: {
         items: {
@@ -16,6 +16,7 @@ export async function GET() {
       include: { category: true },
     }),
     prisma.analyticsEvent.count({ where: { eventType: "PAGE_VIEW" } }),
+    prisma.analyticsEvent.count({ where: { eventType: "ADD_TO_CART" } }),
     prisma.analyticsEvent.count({ where: { eventType: "ORDER_PAID" } }),
   ]);
 
@@ -101,6 +102,11 @@ export async function GET() {
       marketplaceGmv,
       marketplaceCommissions,
       deliveryRevenue,
+    },
+    funnel: {
+      pageViews,
+      addToCarts,
+      paidOrders: paidEvents,
     },
     byCity: Object.values(byCity).sort((a, b) => b.gmv - a.gmv),
     byCategory: Object.values(byCategory).sort((a, b) => b.gmv - a.gmv),

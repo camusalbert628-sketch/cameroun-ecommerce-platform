@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { sendTransactionalNotification } from "@/lib/notifications";
 
 export async function PATCH(
   req: NextRequest,
@@ -43,6 +44,17 @@ export async function PATCH(
         events: { orderBy: { createdAt: "asc" } },
       },
     });
+
+    if (status && eventLabel) {
+      sendTransactionalNotification({
+        storeId: order.storeId,
+        orderId: order.id,
+        channel: "WHATSAPP",
+        recipient: order.customerPhone,
+        subject: `Mise à jour ${order.orderNumber} : ${eventLabel}`,
+        message: eventDescription || `Votre commande est désormais au statut : ${status}.`,
+      }).catch(() => {});
+    }
 
     return NextResponse.json({ order });
   } catch (error) {

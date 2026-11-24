@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Store, PlusCircle, Package, Wallet, ShieldCheck, AlertCircle, Upload, CreditCard } from "lucide-react";
+import { Store, PlusCircle, Package, Wallet, ShieldCheck, AlertCircle, Upload, CreditCard, Globe, Bell } from "lucide-react";
 import { useApp } from "@/components/Providers";
 import { formatFcfa, ORDER_STATUS_META } from "@/lib/format";
 
@@ -44,12 +44,16 @@ export default function VendeurPage() {
 
   // SaaS Billing state
   const [billing, setBilling] = useState<{
-    store?: { plan: string; name: string; slug: string };
+    store?: { plan: string; name: string; slug: string; customDomain?: string | null };
     productCount: number;
     maxProducts: number | null;
     commissionRate: number;
     invoices: { id: string; invoiceNumber: string; plan: string; amountFcfa: number; createdAt: string }[];
   } | null>(null);
+  const [customDomainInput, setCustomDomainInput] = useState("");
+  const [notifications, setNotifications] = useState<
+    { id: string; channel: string; recipient: string; subject: string; status: string; createdAt: string }[]
+  >([]);
 
   // Variant form state
   const [variantProductId, setVariantProductId] = useState<string | null>(null);
@@ -61,13 +65,20 @@ export default function VendeurPage() {
   const isVendor = user?.role === "VENDOR" && user.vendorProfile;
 
   const loadData = async () => {
-    const [pRes, oRes, bRes] = await Promise.all([
+    const [pRes, oRes, bRes, nRes] = await Promise.all([
       fetch("/api/products?includeAll=true"),
       fetch(`/api/orders?vendorId=${user?.vendorProfile?.id || ""}`),
       fetch("/api/billing"),
+      fetch("/api/notifications"),
     ]);
     if (bRes.ok) {
-      setBilling(await bRes.json());
+      const bData = await bRes.json();
+      setBilling(bData);
+      if (bData.store?.customDomain) setCustomDomainInput(bData.store.customDomain);
+    }
+    if (nRes.ok) {
+      const nData = await nRes.json();
+      setNotifications(nData.notifications || []);
     }
     if (pRes.ok) {
       const pData = await pRes.json();
@@ -143,6 +154,22 @@ export default function VendeurPage() {
       }
     } finally {
       setUploadingImg(false);
+    }
+  };
+
+  const handleSaveDomain = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const res = await fetch("/api/stores/domain", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ customDomain: customDomainInput }),
+    });
+    if (res.ok) {
+      showToast("Domaine personnalisé enregistré !");
+      loadData();
+    } else {
+      const err = await res.json();
+      showToast(err.error || "Erreur lors de l'enregistrement du domaine.");
     }
   };
 
@@ -617,8 +644,55 @@ export default function VendeurPage() {
                   ))}
                 </div>
               )}
+
+              {/* Custom Domain (PRO / BUSINESS) */}
+              <form onSubmit={handleSaveDomain} className="border-t border-slate-100 pt-4 space-y-2">
+                <div className="text-xs font-bold text-[#0B192C] flex items-center gap-1.5">
+                  <Globe className="h-3.5 w-3.5 text-[#1E3A5F]" /> Domaine Personnalisé (Plans Pro &amp; Business)
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    value={customDomainInput}
+                    onChange={(e) => setCustomDomainInput(e.target.value)}
+                    placeholder="Ex: boutique.mamarque.cm"
+                    className="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-xs"
+                  />
+                  <button
+                    type="submit"
+                    className="rounded-xl bg-[#1E3A5F] px-4 py-2 text-xs font-bold text-white hover:bg-[#0B192C] cursor-pointer"
+                  >
+                    Lier
+                  </button>
+                </div>
+              </form>
             </div>
           )}
+
+          {/* Automated Notifications Log */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-3">
+            <h2 className="text-base font-extrabold text-[#0B192C] flex items-center gap-2">
+              <Bell className="h-4 w-4 text-emerald-600" /> Journal Notifications (WhatsApp / Email)
+            </h2>
+            {notifications.length === 0 ? (
+              <p className="text-xs text-slate-500">Aucune notification envoyée pour le moment.</p>
+            ) : (
+              <div className="divide-y divide-slate-100 max-h-56 overflow-y-auto">
+                {notifications.map((n) => (
+                  <div key={n.id} className="py-2.5 text-xs flex items-center justify-between gap-2">
+                    <div>
+                      <div className="font-bold text-slate-900">{n.subject}</div>
+                      <div className="text-slate-500">
+                        {n.channel} → {n.recipient}
+                      </div>
+                    </div>
+                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
+                      {n.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

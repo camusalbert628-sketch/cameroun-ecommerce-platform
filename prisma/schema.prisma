@@ -11,6 +11,7 @@ model Store {
   id            String         @id @default(cuid())
   name          String
   slug          String         @unique
+  customDomain  String?        @unique
   tagline       String?
   logoUrl       String?
   primaryColor  String         @default("#0B192C")
@@ -28,6 +29,20 @@ model Store {
   subscriptions Subscription[]
   invoices      BillingInvoice[]
   analytics     AnalyticsEvent[]
+  notifications NotificationLog[]
+}
+
+model NotificationLog {
+  id        String   @id @default(cuid())
+  storeId   String?
+  store     Store?   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  orderId   String?
+  channel   String   // WHATSAPP, EMAIL, SMS
+  recipient String
+  subject   String
+  message   String
+  status    String   @default("SENT") // SENT, QUEUED, FAILED
+  createdAt DateTime @default(now())
 }
 
 model BillingInvoice {
